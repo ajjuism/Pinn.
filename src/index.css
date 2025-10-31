@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* React Flow dark theme styling */
+.react-flow__controls {
+  background: #3a4450 !important;
+  border: 1px solid #4a5560 !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__controls-button {
+  background: #3a4450 !important;
+  border-bottom: 1px solid #4a5560 !important;
+  color: #9ca3af !important;
+  fill: #9ca3af !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #2c3440 !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.react-flow__controls-button:active {
+  background: #2c3440 !important;
+}
+
+.react-flow__minimap {
+  background: #3a4450 !important;
+  border: 1px solid #4a5560 !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(44, 52, 64, 0.6) !important;
+}
+
+.react-flow__minimap-node {
+  fill: #e8935f !important;
+  stroke: #3a4450 !important;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* React Flow node styling - remove wrapper backgrounds and borders */
+.react-flow__node {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__node-default {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.react-flow__node-wrapper {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Target any direct children that React Flow might add */
+.react-flow__node > div:not([class*="relative"]) {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
