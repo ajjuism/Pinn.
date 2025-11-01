@@ -164,11 +164,22 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
           line-height: 1.625;
         }
         .markdown-preview a {
-          color: rgb(96, 165, 250);
-          text-decoration: underline;
+          color: rgb(229, 231, 235);
+          text-decoration: none;
+          background-color: rgba(96, 165, 250, 0.15);
+          border: 1px solid rgba(96, 165, 250, 0.3);
+          padding: 0.25rem 0.625rem;
+          border-radius: 0.375rem;
+          display: inline-block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          line-height: 1.4;
         }
         .markdown-preview a:hover {
-          color: rgb(147, 197, 253);
+          background-color: rgba(96, 165, 250, 0.25);
+          border-color: rgba(96, 165, 250, 0.5);
+          color: rgb(219, 234, 254);
         }
         .markdown-preview ul, .markdown-preview ol {
           color: rgb(209, 213, 219);
@@ -192,12 +203,19 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
           color: rgb(156, 163, 175);
           margin: 1rem 0;
         }
-        .markdown-preview code {
-          background-color: rgb(58, 68, 80);
-          color: rgb(209, 213, 219);
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.25rem;
+        .markdown-preview code:not(pre code) {
+          background-color: rgba(58, 68, 80, 0.9);
+          color: rgb(236, 237, 238);
+          padding: 0.2rem 0.5rem;
+          border-radius: 0.375rem;
           font-size: 0.875rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          border: 1px solid rgba(75, 85, 99, 0.6);
+          font-weight: 450;
+          line-height: 1.5;
+          display: inline-block;
+        }
+        .markdown-preview code {
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
         .markdown-preview pre {
