@@ -22,6 +22,8 @@ import {
   X,
   ChevronLeft,
   Book,
+  Settings,
+  Sparkles,
 } from 'lucide-react';
 import { getNoteById, saveNote, createNote, deleteNote, getNotes, writeAll } from '../lib/storage';
 import { getFlows, createFlow, addNoteToFlow, Flow, getFlowsContainingNote } from '../lib/flowStorage';
@@ -29,6 +31,9 @@ import MarkdownEditor from './MarkdownEditor';
 import MarkdownPreview from './MarkdownPreview';
 import ConfirmDialog from './ConfirmDialog';
 import Toast from './Toast';
+import SettingsDialog from './SettingsDialog';
+import AIPromptDialog from './AIPromptDialog';
+import AIComparisonDialog from './AIComparisonDialog';
 import JSZip from 'jszip';
 
 interface EditorPageProps {
@@ -58,6 +63,18 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
     message: '',
     type: 'success',
   });
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+  const [selectionStart, setSelectionStart] = useState<number | undefined>();
+  const [selectionEnd, setSelectionEnd] = useState<number | undefined>();
+  const [showComparisonDialog, setShowComparisonDialog] = useState(false);
+  const [aiComparison, setAiComparison] = useState<{
+    oldText: string;
+    newText: string;
+    startPos: number;
+    endPos: number;
+  } | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const flowButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -222,6 +239,35 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [menuOpen]);
+
+  // Handle text selection for AI
+  useEffect(() => {
+    const textarea = editorRef.current;
+    if (!textarea || editorMode !== 'markdown') return;
+
+    const handleSelectionChange = () => {
+      const start = textarea.selectionStart ?? 0;
+      const end = textarea.selectionEnd ?? 0;
+      if (start !== end) {
+        const selected = content.slice(start, end);
+        setSelectedText(selected);
+        setSelectionStart(start);
+        setSelectionEnd(end);
+      } else {
+        setSelectedText('');
+        setSelectionStart(undefined);
+        setSelectionEnd(undefined);
+      }
+    };
+
+    textarea.addEventListener('mouseup', handleSelectionChange);
+    textarea.addEventListener('keyup', handleSelectionChange);
+
+    return () => {
+      textarea.removeEventListener('mouseup', handleSelectionChange);
+      textarea.removeEventListener('keyup', handleSelectionChange);
+    };
+  }, [editorMode, content]);
 
   // Handle keyboard shortcuts in markdown editor
   useEffect(() => {
@@ -526,6 +572,79 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
     }, 100);
   };
 
+  const handleAIGenerate = (generatedText: string, isReplace: boolean, startPos?: number, endPos?: number) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    if (isReplace && startPos !== undefined && endPos !== undefined) {
+      // Store old text for comparison
+      const oldText = content.slice(startPos, endPos);
+      setAiComparison({
+        oldText,
+        newText: generatedText,
+        startPos,
+        endPos,
+      });
+      setShowComparisonDialog(true);
+    } else {
+      // Append to end of content (no comparison needed)
+      const newContent = content ? `${content}\n\n${generatedText}` : generatedText;
+      setContent(newContent);
+      
+      // Move cursor to end
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const endPos = newContent.length;
+        textarea.setSelectionRange(endPos, endPos);
+        textarea.scrollTop = textarea.scrollHeight;
+      });
+
+      // Show success toast
+      setToast({
+        isOpen: true,
+        message: 'AI content generated successfully!',
+        type: 'success',
+      });
+    }
+  };
+
+  const handleAcceptAIChange = (editedText?: string) => {
+    if (!aiComparison) return;
+
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    // Use edited text if provided, otherwise use original AI-generated text
+    const textToInsert = editedText || aiComparison.newText;
+    const { startPos, endPos } = aiComparison;
+    const before = content.slice(0, startPos);
+    const after = content.slice(endPos);
+    const newContent = `${before}${textToInsert}${after}`;
+    setContent(newContent);
+
+    // Set cursor after inserted text
+    const newCursorPos = startPos + textToInsert.length;
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    });
+
+    // Close dialog and show toast
+    setShowComparisonDialog(false);
+    setAiComparison(null);
+    setToast({
+      isOpen: true,
+      message: editedText ? 'AI changes edited and accepted successfully!' : 'AI changes accepted successfully!',
+      type: 'success',
+    });
+  };
+
+  const handleRejectAIChange = () => {
+    setShowComparisonDialog(false);
+    setAiComparison(null);
+    // No toast needed for rejection
+  };
+
   return (
     <div className="h-screen bg-[#2c3440] flex flex-col overflow-hidden">
       <header className="flex-shrink-0 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700">
@@ -620,6 +739,17 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (Markdown)</span>
                   </button>
+                  <div className="border-t border-gray-600 my-1" />
+                  <button
+                    onClick={() => {
+                      setShowSettingsDialog(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -664,6 +794,33 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
             </div>
 
             <div className="flex items-center gap-4">
+              {editorMode === 'markdown' && (
+                <button
+                  onClick={() => {
+                    const textarea = editorRef.current;
+                    if (textarea) {
+                      // Capture current selection if any
+                      const start = textarea.selectionStart ?? 0;
+                      const end = textarea.selectionEnd ?? 0;
+                      if (start !== end) {
+                        const selected = content.slice(start, end);
+                        setSelectedText(selected);
+                        setSelectionStart(start);
+                        setSelectionEnd(end);
+                      } else {
+                        setSelectedText('');
+                        setSelectionStart(undefined);
+                        setSelectionEnd(undefined);
+                      }
+                    }
+                    setShowAIDialog(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-300 hover:bg-[#3a4450] rounded transition-colors"
+                  title="AI Assistant"
+                >
+                  <Sparkles className="w-4 h-4" />
+                </button>
+              )}
               {currentNoteId && (
                 <>
                   <div className="relative">
@@ -912,6 +1069,31 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
         message={toast.message}
         type={toast.type}
       />
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+      />
+
+      <AIPromptDialog
+        isOpen={showAIDialog}
+        onClose={() => setShowAIDialog(false)}
+        onGenerate={handleAIGenerate}
+        selectedText={selectedText}
+        selectionStart={selectionStart}
+        selectionEnd={selectionEnd}
+        onOpenSettings={() => setShowSettingsDialog(true)}
+      />
+
+      {aiComparison && (
+        <AIComparisonDialog
+          isOpen={showComparisonDialog}
+          oldText={aiComparison.oldText}
+          newText={aiComparison.newText}
+          onAccept={handleAcceptAIChange}
+          onReject={handleRejectAIChange}
+        />
+      )}
     </div>
   );
 }
