@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Upload, Trash2, ChevronLeft, GitBranch } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, Download, Upload, Trash2, ChevronLeft, GitBranch, Settings } from 'lucide-react';
 import { getNotes, Note, deleteNote, writeAll } from '../lib/storage';
 import { getFlowsContainingNote } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 import Toast from './Toast';
+import SettingsDialog from './SettingsDialog';
 import JSZip from 'jszip';
 
 interface NotesPageProps {
@@ -21,6 +22,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [flowsUsingNote, setFlowsUsingNote] = useState<Array<{ flowId: string; flowTitle: string }>>([]);
   const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
@@ -423,6 +425,17 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Notes</span>
                   </button>
+                  <div className="border-t border-gray-600 my-1" />
+                  <button
+                    onClick={() => {
+                      setShowSettingsDialog(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -535,6 +548,11 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
         onClose={() => setToast({ ...toast, isOpen: false })}
         message={toast.message}
         type={toast.type}
+      />
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
       />
     </div>
   );

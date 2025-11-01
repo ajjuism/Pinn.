@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings } from 'lucide-react';
 import { getFlows, Flow, deleteFlow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
+import SettingsDialog from './SettingsDialog';
 
 interface FlowsPageProps {
   onNavigateToFlow: (flowId?: string) => void;
@@ -18,6 +19,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [flowToDelete, setFlowToDelete] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -189,6 +191,17 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Flows</span>
                   </button>
+                  <div className="border-t border-gray-600 my-1" />
+                  <button
+                    onClick={() => {
+                      setShowSettingsDialog(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -299,6 +312,11 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
         title="Delete All Flows"
         message="Are you sure you want to delete all flows? This cannot be undone."
         confirmText="Delete All"
+      />
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
       />
     </div>
   );

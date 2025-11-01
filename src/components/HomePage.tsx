@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles, Settings } from 'lucide-react';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
 import { getFlows, Flow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 import Toast from './Toast';
+import SettingsDialog from './SettingsDialog';
 import JSZip from 'jszip';
 
 interface HomePageProps {
@@ -24,6 +25,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
     isOpen: false,
     message: '',
@@ -381,6 +383,17 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Notes</span>
                   </button>
+                  <div className="border-t border-gray-600 my-1" />
+                  <button
+                    onClick={() => {
+                      setShowSettingsDialog(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -548,6 +561,11 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
         onClose={() => setToast({ ...toast, isOpen: false })}
         message={toast.message}
         type={toast.type}
+      />
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
       />
     </div>
   );
