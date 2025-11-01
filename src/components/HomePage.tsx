@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, FileText, Download, Trash2, GitBranch, Bookmark } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, FileText, Download, Trash2, GitBranch, Bookmark, Book } from 'lucide-react';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
 import { getFlows, Flow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
@@ -177,7 +177,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
             onClick={onNavigateToNotes}
             className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
           >
-            <FileText className="w-5 h-5" />
+            <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button

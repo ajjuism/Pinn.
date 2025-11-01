@@ -16,16 +16,17 @@ import {
   NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { FileText, X, Search, Trash2, Tag, Palette, Edit2, Clock, PlusCircle, Calendar, ChevronLeft, Check, HelpCircle, GitBranch, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileText, X, Search, Trash2, Tag, Palette, Edit2, Clock, PlusCircle, Calendar, ChevronLeft, Check, HelpCircle, GitBranch, AlertCircle, CheckCircle2, Book } from 'lucide-react';
 import { getFlowById, saveFlow, createFlow as createFlowStorage, Flow, FlowNode, FlowEdge, removeNodeFromFlow } from '../lib/flowStorage';
 import { getNotes, getNoteById, saveNote, createNote, Note } from '../lib/storage';
-import WYSIWYGEditor from './WYSIWYGEditor';
+import MarkdownPreview from './MarkdownPreview';
 
 interface FlowPageProps {
   flowId: string | null;
   onNavigateToHome: () => void;
   onNavigateToEditor: (noteId: string) => void;
   onNavigateToFlows: () => void;
+  onNavigateToNotes: () => void;
 }
 
 interface CustomNodeData extends Record<string, unknown> {
@@ -124,7 +125,7 @@ const nodeTypes = {
   default: CustomNode,
 };
 
-export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, onNavigateToEditor, onNavigateToFlows }: FlowPageProps) {
+export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, onNavigateToEditor, onNavigateToFlows, onNavigateToNotes }: FlowPageProps) {
   const [flow, setFlow] = useState<Flow | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<CustomNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -871,6 +872,20 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           )}
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={onNavigateToFlows}
+            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+          >
+            <GitBranch className="w-5 h-5" />
+            <span>Flows</span>
+          </button>
+          <button
+            onClick={onNavigateToNotes}
+            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+          >
+            <Book className="w-5 h-5" />
+            <span>Notes</span>
+          </button>
           <button
             onClick={handleCreateNewNode}
             className="flex items-center gap-2 px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg transition-colors"
@@ -1678,9 +1693,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               </div>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-hide px-8 py-6 bg-[#2c3440]">
-              <div className="prose prose-invert prose-gray max-w-none">
-                <WYSIWYGEditor content={selectedNote.content || '*No content yet.*'} />
-              </div>
+              <MarkdownPreview content={selectedNote.content || ''} />
             </div>
           </div>
         </div>

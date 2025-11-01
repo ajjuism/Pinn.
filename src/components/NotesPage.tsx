@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, GitBranch } from 'lucide-react';
 import { getNotes, Note, deleteNote, writeAll } from '../lib/storage';
 import { getFlowsContainingNote } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
@@ -7,9 +7,10 @@ import ConfirmDialog from './ConfirmDialog';
 interface NotesPageProps {
   onNavigateToEditor: (noteId?: string) => void;
   onNavigateToHome: () => void;
+  onNavigateToFlows: () => void;
 }
 
-export default function NotesPage({ onNavigateToEditor, onNavigateToHome }: NotesPageProps) {
+export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavigateToFlows }: NotesPageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,7 +140,63 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome }: Note
 
   const getPreview = (content: string, maxLength: number = 100) => {
     if (!content) return 'No content';
-    const text = content.replace(/[#*`\[\]]/g, '').trim();
+    
+    // Convert markdown to plain text more intelligently
+    let text = content;
+    
+    // Handle markdown tables - extract text from table rows
+    text = text.replace(/\|(.+)\|/g, (match, content) => {
+      // Skip separator rows (like |-----: |-----: |)
+      if (content.match(/^[\s-:]+$/)) return '';
+      // Extract cell contents and join with spaces
+      const cells = content.split('|').map(c => c.trim()).filter(c => c && !c.match(/^[-:]+$/));
+      return cells.join(' ');
+    });
+    
+    // Remove markdown headers
+    text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+    
+    // Remove markdown links but keep the text
+    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    
+    // Remove markdown images but keep alt text
+    text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1');
+    
+    // Remove markdown code blocks
+    text = text.replace(/```[\s\S]*?```/g, '');
+    
+    // Remove inline code
+    text = text.replace(/`([^`]+)`/g, '$1');
+    
+    // Remove markdown lists markers
+    text = text.replace(/^[\s]*[-*+]\s+/gm, '');
+    text = text.replace(/^[\s]*\d+\.\s+/gm, '');
+    
+    // Remove markdown bold/italic markers
+    text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
+    text = text.replace(/\*([^*]+)\*/g, '$1');
+    text = text.replace(/__([^_]+)__/g, '$1');
+    text = text.replace(/_([^_]+)_/g, '$1');
+    
+    // Remove markdown strikethrough
+    text = text.replace(/~~([^~]+)~~/g, '$1');
+    
+    // Remove markdown blockquotes
+    text = text.replace(/^>\s+/gm, '');
+    
+    // Remove horizontal rules
+    text = text.replace(/^[-*_]{3,}$/gm, '');
+    
+    // Remove remaining markdown special characters (but keep pipes and colons for content)
+    text = text.replace(/[#`\[\]()]/g, '');
+    
+    // Clean up extra whitespace
+    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/\s+/g, ' ');
+    text = text.trim();
+    
+    if (!text || text.length === 0) return 'No content';
+    
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
@@ -164,6 +221,13 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome }: Note
           >
             <Plus className="w-5 h-5" />
             <span>New Note</span>
+          </button>
+          <button
+            onClick={onNavigateToFlows}
+            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+          >
+            <GitBranch className="w-5 h-5" />
+            <span>Flow</span>
           </button>
           <div className="relative" ref={menuRef}>
             <button

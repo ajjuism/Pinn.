@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book } from 'lucide-react';
 import { getFlows, Flow, deleteFlow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 
 interface FlowsPageProps {
   onNavigateToFlow: (flowId?: string) => void;
   onNavigateToHome: () => void;
+  onNavigateToNotes: () => void;
 }
 
-export default function FlowsPage({ onNavigateToFlow, onNavigateToHome }: FlowsPageProps) {
+export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNavigateToNotes }: FlowsPageProps) {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,6 +155,13 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome }: FlowsP
           >
             <Plus className="w-5 h-5" />
             <span>New Flow</span>
+          </button>
+          <button
+            onClick={onNavigateToNotes}
+            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+          >
+            <Book className="w-5 h-5" />
+            <span>Notes</span>
           </button>
           <div className="relative" ref={menuRef}>
             <button

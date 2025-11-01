@@ -101,11 +101,11 @@ function App() {
       ) : currentView === 'editor' ? (
         <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
       ) : currentView === 'flows' ? (
-        <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} />
+        <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
       ) : currentView === 'notes' ? (
-        <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} />
+        <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
       ) : (
-        <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} />
+        <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
       )}
     </div>
   );
