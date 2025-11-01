@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles } from 'lucide-react';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
 import { getFlows, Flow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
@@ -493,12 +493,24 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                 </div>
               </div>
             ) : !searchQuery && (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#3a4450] border border-gray-600 mb-4">
-                  <FileText className="w-10 h-10 text-gray-500" />
+              <div className="flex flex-col items-center justify-center py-24 px-4">
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#e8935f]/10 to-transparent rounded-2xl blur-xl"></div>
+                  <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-[#3a4450] to-[#2c3440] border border-gray-700/50 flex items-center justify-center">
+                    <Sparkles className="w-12 h-12 text-[#e8935f] opacity-80" />
+                  </div>
                 </div>
-                <p className="text-gray-400 mb-2">No notes yet</p>
-                <p className="text-sm text-gray-500">Create your first note to get started</p>
+                <h3 className="text-xl font-medium text-gray-200 mb-2 text-center">No notes yet</h3>
+                <p className="text-sm text-gray-500 max-w-md text-center">
+                  Start capturing your thoughts and ideas. Create your first note to begin.
+                </p>
+                <button
+                  onClick={handleNewNote}
+                  className="mt-8 px-6 py-3 bg-gradient-to-r from-[#e8935f] to-[#e8935f]/90 hover:from-[#e8935f]/90 hover:to-[#e8935f] text-white rounded-lg font-medium transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Create Note</span>
+                </button>
               </div>
             )}
 
