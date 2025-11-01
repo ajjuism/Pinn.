@@ -327,6 +327,34 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
         }
         .markdown-preview input[type="checkbox"] {
           margin-right: 0.5rem;
+          appearance: none;
+          width: 1.1em;
+          height: 1.1em;
+          border: 2px solid #6b8e7f;
+          border-radius: 3px;
+          background-color: transparent;
+          cursor: pointer;
+          position: relative;
+          flex-shrink: 0;
+        }
+        .markdown-preview input[type="checkbox"]:checked {
+          background-color: #6b8e7f;
+          border-color: #6b8e7f;
+          accent-color: #6b8e7f;
+        }
+        .markdown-preview input[type="checkbox"]:checked::before {
+          content: "✓";
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          color: #1f2937;
+          font-size: 0.9em;
+          font-weight: 700;
+          line-height: 1;
+        }
+        .markdown-preview li:has(input[type="checkbox"]:checked) {
+          color: #6b8e7f;
         }
         .markdown-preview task-list-item {
           list-style-type: none;

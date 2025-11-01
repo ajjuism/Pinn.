@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, GitBranch } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, Download, Upload, Trash2, ChevronLeft, GitBranch } from 'lucide-react';
 import { getNotes, Note, deleteNote, writeAll } from '../lib/storage';
 import { getFlowsContainingNote } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
+import Toast from './Toast';
+import JSZip from 'jszip';
 
 interface NotesPageProps {
   onNavigateToEditor: (noteId?: string) => void;
@@ -21,6 +23,11 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [flowsUsingNote, setFlowsUsingNote] = useState<Array<{ flowId: string; flowTitle: string }>>([]);
+  const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'success',
+  });
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -113,17 +120,163 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
     }
   };
 
-  const handleExportAll = () => {
+  const handleExportAll = async () => {
     const allNotes = getNotes();
-    const blob = new Blob([JSON.stringify(allNotes, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pinn-notes-export.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (allNotes.length === 0) {
+      setToast({
+        isOpen: true,
+        message: 'No notes to export.',
+        type: 'error',
+      });
+      setMenuOpen(false);
+      return;
+    }
+
+    try {
+      const zip = new JSZip();
+      
+      // Add each note as an individual JSON file
+      allNotes.forEach((note) => {
+        const sanitizedName = note.title.replace(/[^a-z0-9]/gi, '_') || 'Untitled';
+        // Use note ID to ensure uniqueness if titles are similar
+        const fileName = `${sanitizedName}_${note.id.slice(0, 8)}.json`;
+        zip.file(fileName, JSON.stringify(note, null, 2));
+      });
+
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pinn-notes-export.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMenuOpen(false);
+    } catch (error) {
+      console.error('Error creating ZIP file:', error);
+      setToast({
+        isOpen: true,
+        message: 'Failed to create export file.',
+        type: 'error',
+      });
+      setMenuOpen(false);
+    }
+  };
+
+  const handleExportAllMarkdown = async () => {
+    const allNotes = getNotes();
+    if (allNotes.length === 0) {
+      setToast({
+        isOpen: true,
+        message: 'No notes to export.',
+        type: 'error',
+      });
+      setMenuOpen(false);
+      return;
+    }
+
+    try {
+      const zip = new JSZip();
+      
+      // Add each note as an individual Markdown file
+      allNotes.forEach((note) => {
+        const sanitizedName = note.title.replace(/[^a-z0-9]/gi, '_') || 'Untitled';
+        // Use note ID to ensure uniqueness if titles are similar
+        const fileName = `${sanitizedName}_${note.id.slice(0, 8)}.md`;
+        const markdown = `# ${note.title}\n\n${note.content}`;
+        zip.file(fileName, markdown);
+      });
+
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pinn-notes-export.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMenuOpen(false);
+    } catch (error) {
+      console.error('Error creating ZIP file:', error);
+      setToast({
+        isOpen: true,
+        message: 'Failed to create export file.',
+        type: 'error',
+      });
+      setMenuOpen(false);
+    }
+  };
+
+  const handleImportNotes = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target?.result as string;
+          const importedData = JSON.parse(content);
+          
+          // Handle both single note and array of notes
+          const notesToImport = Array.isArray(importedData) ? importedData : [importedData];
+          
+          // Validate notes structure
+          const validNotes = notesToImport.filter((note: any) => 
+            note && typeof note === 'object' && note.title !== undefined && note.content !== undefined
+          );
+
+          if (validNotes.length === 0) {
+            setToast({
+              isOpen: true,
+              message: 'No valid notes found in the file. Please ensure the file contains notes with title and content fields.',
+              type: 'error',
+            });
+            return;
+          }
+
+          // Import notes (generate new IDs and timestamps)
+          const existingNotes = getNotes();
+          const importedNotes = validNotes.map((note: any) => ({
+            id: crypto.randomUUID(),
+            title: note.title || 'Untitled',
+            content: note.content || '',
+            created_at: note.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }));
+
+          // Merge with existing notes
+          const allNotes = [...importedNotes, ...existingNotes];
+          writeAll(allNotes);
+
+          // Reload notes
+          loadNotes();
+
+          setToast({
+            isOpen: true,
+            message: `Successfully imported ${importedNotes.length} note(s).`,
+            type: 'success',
+          });
+          setMenuOpen(false);
+        } catch (error) {
+          console.error('Error importing notes:', error);
+          setToast({
+            isOpen: true,
+            message: 'Failed to import notes. Please ensure the file is a valid JSON file.',
+            type: 'error',
+          });
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
     setMenuOpen(false);
   };
 
@@ -241,11 +394,26 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
               <div className="absolute right-0 mt-2 w-56 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
+                    onClick={handleImportNotes}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Import Notes</span>
+                  </button>
+                  <div className="border-t border-gray-600 my-1" />
+                  <button
                     onClick={handleExportAll}
                     className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Export All Notes</span>
+                    <span>Export All Notes (JSON)</span>
+                  </button>
+                  <button
+                    onClick={handleExportAllMarkdown}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Export All Notes (Markdown)</span>
                   </button>
                   <div className="border-t border-gray-600 my-1" />
                   <button
@@ -360,6 +528,13 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
         title="Delete All Notes"
         message="Are you sure you want to delete all notes? This cannot be undone."
         confirmText="Delete All"
+      />
+
+      <Toast
+        isOpen={toast.isOpen}
+        onClose={() => setToast({ ...toast, isOpen: false })}
+        message={toast.message}
+        type={toast.type}
       />
     </div>
   );
