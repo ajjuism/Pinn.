@@ -633,7 +633,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                 onClick={() => handleFolderClick('All')}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                   selectedFolder === 'All'
-                    ? 'bg-[#3a4450] text-white'
+                    ? 'bg-[#3a4450] text-gray-200'
                     : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
                 }`}
               >

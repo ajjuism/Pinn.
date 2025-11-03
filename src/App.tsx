@@ -4,13 +4,19 @@ import EditorPage from './components/EditorPage';
 import FlowsPage from './components/FlowsPage';
 import FlowPage from './components/FlowPage';
 import NotesPage from './components/NotesPage';
+import OnboardingDialog from './components/OnboardingDialog';
 import { FileText } from 'lucide-react';
+import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess } from './lib/fileSystemStorage';
+import { initStorage, refreshStorage } from './lib/storage';
+import { initFlowStorage, refreshFlowStorage } from './lib/flowStorage';
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'editor' | 'flows' | 'flow' | 'notes'>('home');
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   const [currentFlowId, setCurrentFlowId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Detect mobile devices
   useEffect(() => {
@@ -24,6 +30,60 @@ function App() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Initialize storage and check for onboarding
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        console.log('App initialization started');
+        // First, restore directory handle from IndexedDB if configured
+        await initializeDirectoryHandle();
+        const handleAvailable = hasDirectoryAccess();
+        console.log('Directory handle initialization completed, handle available:', handleAvailable);
+        
+        // Give a tiny delay to ensure handle is fully set
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Initialize storage (will use file system or localStorage)
+        await initStorage();
+        await initFlowStorage();
+        console.log('Storage initialization completed');
+        
+        // Check if folder is configured
+        const folderConfigured = isFolderConfigured();
+        if (!folderConfigured) {
+          console.log('No folder configured, showing onboarding');
+          setShowOnboarding(true);
+        } else {
+          console.log('Folder is configured');
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initialize();
+  }, []);
+
+  const handleOnboardingComplete = async () => {
+    // Refresh storage to ensure it uses the file system
+    await refreshStorage();
+    await refreshFlowStorage();
+    setShowOnboarding(false);
+  };
+
+  // Check if folder was removed (will trigger onboarding again)
+  useEffect(() => {
+    if (!isInitializing && !showOnboarding) {
+      const folderConfigured = isFolderConfigured();
+      if (!folderConfigured && !isMobile) {
+        // Folder was removed, show onboarding
+        setShowOnboarding(true);
+      }
+    }
+  }, [isInitializing, showOnboarding, isMobile]);
 
   const navigateToHome = () => {
     setCurrentView('home');
@@ -54,6 +114,15 @@ function App() {
     setCurrentView('flow');
     setCurrentNoteId(null);
   };
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-[#2c3440] flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   // Mobile Warning Overlay - blocks all access on mobile
   if (isMobile) {
@@ -96,16 +165,22 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#2c3440] text-gray-300">
-      {currentView === 'home' ? (
-        <HomePage onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToFlow={navigateToFlow} onNavigateToNotes={navigateToNotes} />
-      ) : currentView === 'editor' ? (
-        <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
-      ) : currentView === 'flows' ? (
-        <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
-      ) : currentView === 'notes' ? (
-        <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
+      {showOnboarding ? (
+        <OnboardingDialog onComplete={handleOnboardingComplete} />
       ) : (
-        <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+        <>
+          {currentView === 'home' ? (
+            <HomePage onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToFlow={navigateToFlow} onNavigateToNotes={navigateToNotes} />
+          ) : currentView === 'editor' ? (
+            <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+          ) : currentView === 'flows' ? (
+            <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
+          ) : currentView === 'notes' ? (
+            <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
+          ) : (
+            <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+          )}
+        </>
       )}
     </div>
   );
