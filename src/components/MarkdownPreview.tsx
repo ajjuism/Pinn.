@@ -38,11 +38,39 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
             const codeString = String(children).replace(/\n$/, '');
             const codeIndex = node?.position?.start?.line || Date.now();
             
-            // Code block (not inline) - handle both with and without language
-            if (!inline) {
-              const language = match ? match[1] : 'text';
-              
+            // In react-markdown:
+            // - Inline code (backticks): inline === true, no language class, no pre wrapper
+            // - Code blocks (triple backticks): inline === false, may have language class, wrapped in pre
+            // Check: inline must be true, OR (inline is not false AND no language class AND code is short/single line)
+            const hasLanguageClass = match !== null;
+            const isInlineCode = inline === true || (inline !== false && !hasLanguageClass && codeString.split('\n').length === 1);
+            
+            if (isInlineCode) {
+              // Inline code - render as inline element without copy button
+              // Don't spread className from props as it might contain block-level classes
+              const { className: propClassName, ...restProps } = props;
               return (
+                <code 
+                  className="inline-code" 
+                  style={{
+                    display: 'inline !important',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                    margin: '0 !important',
+                    padding: '0.2rem 0.5rem',
+                    width: 'auto !important',
+                    maxWidth: 'none !important',
+                  }}
+                  {...restProps}
+                >
+                  {children}
+                </code>
+              );
+            }
+            
+            // Code block - handle both with and without language
+            const language = match ? match[1] : 'text';
+            
+            return (
                 <div className="relative group code-block-wrapper">
                   <div className="absolute top-3 right-3 z-10">
                     <button
@@ -96,13 +124,11 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
                   </SyntaxHighlighter>
                 </div>
               );
-            }
-            // Inline code
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
+          },
+          pre({ children, ...props }: any) {
+            // Pre tags only wrap code blocks, never inline code
+            // We handle code blocks in the code component, so we just pass through
+            return <pre {...props}>{children}</pre>;
           },
         }}
       >
@@ -203,17 +229,23 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
           color: rgb(156, 163, 175);
           margin: 1rem 0;
         }
-        .markdown-preview code:not(pre code) {
-          background-color: rgba(58, 68, 80, 0.9);
-          color: rgb(236, 237, 238);
-          padding: 0.2rem 0.5rem;
-          border-radius: 0.375rem;
-          font-size: 0.875rem;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-          border: 1px solid rgba(75, 85, 99, 0.6);
-          font-weight: 450;
-          line-height: 1.5;
-          display: inline-block;
+        .markdown-preview code:not(pre code),
+        .markdown-preview .inline-code {
+          background-color: rgba(58, 68, 80, 0.9) !important;
+          color: rgb(236, 237, 238) !important;
+          padding: 0.2rem 0.5rem !important;
+          border-radius: 0.375rem !important;
+          font-size: 0.875rem !important;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+          border: 1px solid rgba(75, 85, 99, 0.6) !important;
+          font-weight: 450 !important;
+          line-height: 1.5 !important;
+          display: inline !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+          margin: 0 !important;
+          width: auto !important;
+          max-width: none !important;
         }
         .markdown-preview code {
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
