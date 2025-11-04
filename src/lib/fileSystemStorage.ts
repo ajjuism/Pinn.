@@ -608,6 +608,31 @@ export async function writeFoldersToFile(folders: string[]): Promise<void> {
   await writeJSONFile('folders.json', unique);
 }
 
+export async function readCategoriesFromFile(): Promise<string[]> {
+  try {
+    const data = await readJSONFile('flowCategories.json');
+    if (data === null) {
+      console.log('flowCategories.json not found or empty, returning empty array');
+      return [];
+    }
+    if (!Array.isArray(data)) {
+      console.warn('flowCategories.json contains invalid data (not an array), returning empty array');
+      return [];
+    }
+    const categories = data.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean);
+    console.log(`Loaded ${categories.length} categories from flowCategories.json`);
+    return categories;
+  } catch (error) {
+    console.error('Error reading flowCategories.json:', error);
+    return [];
+  }
+}
+
+export async function writeCategoriesToFile(categories: string[]): Promise<void> {
+  const unique = Array.from(new Set(categories.map((c) => (c || '').trim()).filter(Boolean)));
+  await writeJSONFile('flowCategories.json', unique);
+}
+
 // Storage operations for flows
 export async function readFlowsFromFile(): Promise<any[]> {
   try {
@@ -668,6 +693,15 @@ export async function migrateFromLocalStorage(): Promise<{ notesMigrated: number
       const folders = JSON.parse(foldersData);
       if (Array.isArray(folders) && folders.length > 0) {
         await writeFoldersToFile(folders);
+      }
+    }
+
+    // Migrate flow categories
+    const categoriesData = localStorage.getItem('pinn.flowCategories');
+    if (categoriesData) {
+      const categories = JSON.parse(categoriesData);
+      if (Array.isArray(categories) && categories.length > 0) {
+        await writeCategoriesToFile(categories);
       }
     }
   } catch (error) {

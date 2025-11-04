@@ -1,6 +1,8 @@
 import { 
   readFlowsFromFile, 
   writeFlowsToFile,
+  readCategoriesFromFile,
+  writeCategoriesToFile,
   isFolderConfigured,
   hasDirectoryAccess 
 } from './fileSystemStorage';
@@ -30,17 +32,21 @@ export interface Flow {
   nodes: FlowNode[];
   edges: FlowEdge[];
   tags?: string[];
+  // Optional category grouping. When undefined or empty, the flow is unfiled
+  category?: string;
   created_at: string;
   updated_at: string;
 }
 
 // In-memory cache
 let flowsCache: Flow[] | null = null;
+let categoriesCache: string[] | null = null;
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
 // Fallback to localStorage if file system is not configured
 const STORAGE_KEY = 'pinn.flows';
+const CATEGORIES_KEY = 'pinn.flowCategories';
 
 /**
  * Initialize flows storage - load data from file system or localStorage
@@ -70,8 +76,9 @@ async function initialize(): Promise<void> {
       
       if (folderConfigured && hasAccess) {
         // Load from file system
-        console.log('Loading flows from file system...');
+        console.log('Loading flows and categories from file system...');
         const loadedFlows = await readFlowsFromFile();
+        const loadedCategories = await readCategoriesFromFile();
         
         // Only update cache if we got valid data (array, even if empty)
         if (Array.isArray(loadedFlows)) {
@@ -81,7 +88,14 @@ async function initialize(): Promise<void> {
           flowsCache = flowsCache || [];
         }
         
-        console.log(`Initialized flows storage: ${flowsCache.length} flows`);
+        if (Array.isArray(loadedCategories)) {
+          categoriesCache = loadedCategories;
+        } else {
+          console.warn('Invalid categories data loaded, keeping existing cache or empty array');
+          categoriesCache = categoriesCache || [];
+        }
+        
+        console.log(`Initialized flows storage: ${flowsCache.length} flows, ${categoriesCache.length} categories`);
       } else {
         console.log('Using localStorage fallback for flows (folder configured:', folderConfigured, ', has access:', hasAccess, ')');
         // Fallback to localStorage
@@ -96,11 +110,24 @@ async function initialize(): Promise<void> {
         } catch {
           flowsCache = [];
         }
-        console.log(`Initialized flows storage from localStorage: ${flowsCache.length} flows`);
+
+        try {
+          const raw = localStorage.getItem(CATEGORIES_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            categoriesCache = Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean) : [];
+          } else {
+            categoriesCache = [];
+          }
+        } catch {
+          categoriesCache = [];
+        }
+        console.log(`Initialized flows storage from localStorage: ${flowsCache.length} flows, ${categoriesCache.length} categories`);
       }
     } catch (error) {
       console.error('Error initializing flows storage:', error);
       flowsCache = [];
+      categoriesCache = [];
     }
     isInitialized = true;
   })();
@@ -180,6 +207,64 @@ function readAll(): Flow[] {
 }
 
 /**
+ * Write categories to storage
+ */
+async function writeCategories(categories: string[]): Promise<void> {
+  const unique = Array.from(new Set(categories.map((c) => (c || '').trim()).filter(Boolean)));
+  categoriesCache = unique;
+  
+  try {
+    const folderConfigured = isFolderConfigured();
+    const hasAccess = hasDirectoryAccess();
+    
+    if (folderConfigured) {
+      if (hasAccess) {
+        await writeCategoriesToFile(unique);
+      } else {
+        // Try to restore handle
+        const { initializeDirectoryHandle } = await import('./fileSystemStorage');
+        await initializeDirectoryHandle();
+        
+        if (hasDirectoryAccess()) {
+          await writeCategoriesToFile(unique);
+        } else {
+          console.error('ERROR: Cannot write categories - folder configured but handle unavailable!');
+          localStorage.setItem(CATEGORIES_KEY, JSON.stringify(unique));
+        }
+      }
+    } else {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(unique));
+    }
+  } catch (error) {
+    console.error('Error writing categories:', error);
+    try {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(unique));
+    } catch (localError) {
+      console.error('Failed to write categories to localStorage backup:', localError);
+    }
+  }
+}
+
+/**
+ * Read categories from cache
+ */
+function readCategories(): string[] {
+  if (!isInitialized) {
+    try {
+      const raw = localStorage.getItem(CATEGORIES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean) : [];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  }
+  return categoriesCache || [];
+}
+
+/**
  * Initialize flows storage (call this on app startup)
  */
 export async function initFlowStorage(): Promise<void> {
@@ -230,6 +315,7 @@ export function createFlow(title: string): Flow {
     nodes: [],
     edges: [],
     tags: [],
+    category: undefined,
     created_at: now,
     updated_at: now,
   };
@@ -291,4 +377,93 @@ export function getFlowsContainingNote(noteId: string): Array<{ flowId: string; 
   }
   
   return flowsContainingNote;
+}
+
+export function setFlowCategory(id: string, category: string | undefined): Flow | null {
+  const all = readAll();
+  const index = all.findIndex((f) => f.id === id);
+  if (index === -1) return null;
+  const normalized = (category || '').trim();
+  const next: Flow = { ...all[index], category: normalized || undefined, updated_at: new Date().toISOString() };
+  all[index] = next;
+  writeAll(all); // Non-blocking async write
+  if (normalized) {
+    const list = readCategories();
+    if (!list.includes(normalized)) {
+      list.push(normalized);
+      writeCategories(list).catch(console.error); // Non-blocking async write
+    }
+  }
+  return next;
+}
+
+export function getAllCategories(): string[] {
+  const fromFlows = new Set<string>();
+  for (const f of readAll()) {
+    if (f.category && f.category.trim()) fromFlows.add(f.category.trim());
+  }
+  const fromList = new Set<string>(readCategories());
+  const union = new Set<string>([...fromFlows, ...fromList]);
+  return Array.from(union).sort((a, b) => a.localeCompare(b));
+}
+
+export function addCategory(name: string): void {
+  const normalized = (name || '').trim();
+  if (!normalized) return;
+  const list = readCategories();
+  if (!list.includes(normalized)) {
+    list.push(normalized);
+    writeCategories(list).catch(console.error); // Non-blocking async write
+  }
+}
+
+export function renameCategory(oldName: string, newName: string): { updatedCount: number } {
+  const source = (oldName || '').trim();
+  const target = (newName || '').trim();
+  if (!source || !target || source === target) return { updatedCount: 0 };
+  const all = readAll();
+  let updated = 0;
+  const next = all.map((f) => {
+    if ((f.category || '').trim() === source) {
+      updated += 1;
+      return { ...f, category: target, updated_at: new Date().toISOString() };
+    }
+    return f;
+  });
+  writeAll(next); // Non-blocking async write
+  // update category list
+  const list = readCategories().filter((c) => c !== source);
+  list.push(target);
+  writeCategories(list).catch(console.error); // Non-blocking async write
+  return { updatedCount: updated };
+}
+
+export function deleteCategory(
+  categoryName: string,
+  mode: 'delete-flows' | 'move-to-unfiled'
+): { affectedCount: number } {
+  const target = (categoryName || '').trim();
+  if (!target) return { affectedCount: 0 };
+  const all = readAll();
+  let affected = 0;
+  let next: Flow[];
+  if (mode === 'delete-flows') {
+    next = all.filter((f) => {
+      const isInCategory = (f.category || '').trim() === target;
+      if (isInCategory) affected += 1;
+      return !isInCategory;
+    });
+  } else {
+    next = all.map((f) => {
+      if ((f.category || '').trim() === target) {
+        affected += 1;
+        return { ...f, category: undefined, updated_at: new Date().toISOString() };
+      }
+      return f;
+    });
+  }
+  writeAll(next); // Non-blocking async write
+  // remove category from list
+  writeCategories(readCategories().filter((c) => c !== target)).catch(console.error); // Non-blocking async write
+  return { affectedCount: affected };
 }

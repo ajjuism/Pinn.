@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings } from 'lucide-react';
-import { getFlows, Flow, deleteFlow } from '../lib/flowStorage';
+import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, GitBranch } from 'lucide-react';
+import { getFlows, Flow, deleteFlow, getAllCategories, setFlowCategory, addCategory, renameCategory as storageRenameCategory, deleteCategory as storageDeleteCategory } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 
@@ -15,12 +15,22 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
   const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'date'>('date');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [assignAfterCreateFlowId, setAssignAfterCreateFlowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [flowToDelete, setFlowToDelete] = useState<string | null>(null);
+  const [categoryToRename, setCategoryToRename] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryDeleteCount, setCategoryDeleteCount] = useState<number>(0);
+  const [showCategoryDeleteDialog, setShowCategoryDeleteDialog] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -40,7 +50,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
 
   useEffect(() => {
     filterAndSortFlows();
-  }, [flows, searchQuery, sortBy]);
+  }, [flows, searchQuery, sortBy, selectedCategory]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,11 +72,63 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
     try {
       const data = getFlows();
       setFlows(data || []);
+      const allCategories = getAllCategories();
+      setCategories(['All', 'Unfiled', ...allCategories]);
+      // Auto-expand categories that have flows in the current filter
+      if (allCategories.length > 0 && expandedCategories.size === 0) {
+        setExpandedCategories(new Set(allCategories));
+      }
     } catch (error) {
       console.error('Error loading flows:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) {
+        next.delete(categoryName);
+      } else {
+        next.add(categoryName);
+      }
+      return next;
+    });
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+  };
+
+  const organizeFlowsByCategory = () => {
+    const organized: Record<string, Flow[]> = {};
+    const unfiled: Flow[] = [];
+
+    flows.forEach((flow) => {
+      const category = flow.category?.trim();
+      if (category) {
+        if (!organized[category]) {
+          organized[category] = [];
+        }
+        organized[category].push(flow);
+      } else {
+        unfiled.push(flow);
+      }
+    });
+
+    // Sort flows within each category by updated_at
+    Object.keys(organized).forEach((category) => {
+      organized[category].sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+    });
+
+    unfiled.sort((a, b) => 
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+
+    return { organized, unfiled };
   };
 
   const filterAndSortFlows = () => {
@@ -80,6 +142,14 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
           flow.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
           flow.nodes.some((node) => node.data.label.toLowerCase().includes(query))
       );
+    }
+
+    if (selectedCategory && selectedCategory !== 'All') {
+      if (selectedCategory === 'Unfiled') {
+        filtered = filtered.filter((f) => !f.category || !f.category.trim());
+      } else {
+        filtered = filtered.filter((f) => (f.category || '').trim() === selectedCategory);
+      }
     }
 
     filtered = [...filtered].sort((a, b) => {
@@ -105,7 +175,91 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
   };
 
   const handleNewFlow = () => {
+    // Store selected category for auto-assignment when flow is created
+    if (selectedCategory && selectedCategory !== 'All' && selectedCategory !== 'Unfiled') {
+      localStorage.setItem('pinn.pendingFlowCategory', selectedCategory);
+    } else {
+      localStorage.removeItem('pinn.pendingFlowCategory');
+    }
     onNavigateToFlow();
+  };
+
+  const handleCreateCategory = () => {
+    setAssignAfterCreateFlowId(null);
+    setNewCategoryName('');
+    setShowCategoryDialog(true);
+  };
+
+  const handleRenameCategory = (name: string) => {
+    setCategoryToRename(name);
+    setNewCategoryName(name);
+    setShowCategoryDialog(true);
+  };
+
+  const handleDeleteCategoryClick = (name: string) => {
+    setCategoryToDelete(name);
+    // Count how many flows are in this category to decide dialog variant
+    try {
+      const count = flows.reduce((acc, f) => acc + (((f.category || '').trim() === name) ? 1 : 0), 0);
+      setCategoryDeleteCount(count);
+    } catch {
+      setCategoryDeleteCount(0);
+    }
+    setShowCategoryDeleteDialog(true);
+  };
+
+  const handleAssignCategory = (flowId: string, value: string) => {
+    if (value === '__new__') {
+      setAssignAfterCreateFlowId(flowId);
+      setNewCategoryName('');
+      setShowCategoryDialog(true);
+      return;
+    }
+    const category = value === 'Unfiled' ? undefined : (value || undefined);
+    const updated = setFlowCategory(flowId, category);
+    if (updated) {
+      loadFlows();
+    }
+  };
+
+  const confirmCreateCategory = () => {
+    const normalized = (newCategoryName || '').trim();
+    if (!normalized) {
+      setShowCategoryDialog(false);
+      return;
+    }
+    if (categoryToRename && categoryToRename !== normalized) {
+      storageRenameCategory(categoryToRename, normalized);
+      loadFlows();
+      setSelectedCategory(normalized);
+    } else {
+      // Persist new category and refresh
+      addCategory(normalized);
+      setCategories(['All', 'Unfiled', ...getAllCategories()]);
+      if (!assignAfterCreateFlowId) setSelectedCategory(normalized);
+    }
+
+    if (assignAfterCreateFlowId) {
+      const updated = setFlowCategory(assignAfterCreateFlowId, normalized);
+      if (updated) {
+        loadFlows();
+      }
+    }
+
+    setAssignAfterCreateFlowId(null);
+    setNewCategoryName('');
+    setCategoryToRename(null);
+    setShowCategoryDialog(false);
+  };
+
+  const confirmDeleteCategory = (mode: 'delete-flows' | 'move-to-unfiled') => {
+    if (!categoryToDelete) return;
+    storageDeleteCategory(categoryToDelete, mode);
+    setShowCategoryDeleteDialog(false);
+    setCategoryToDelete(null);
+    setCategoryDeleteCount(0);
+    if (selectedCategory === categoryToDelete) setSelectedCategory('All');
+    loadFlows();
   };
 
   const handleDeleteFlow = (flowId: string, e: React.MouseEvent) => {
@@ -147,9 +301,17 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
     setFilteredFlows([]);
   };
 
+  const { organized, unfiled } = organizeFlowsByCategory();
+  // Include empty categories from the persisted list so they show in the sidebar
+  const categorySet = new Set<string>([
+    ...Object.keys(organized),
+    ...categories.filter((c) => c !== 'All' && c !== 'Unfiled'),
+  ]);
+  const sortedCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b));
+
   return (
-    <div className="min-h-screen bg-[#2c3440]">
-      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700">
+    <div className="h-screen bg-[#2c3440] flex flex-col overflow-hidden">
+      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={onNavigateToHome}
@@ -220,82 +382,303 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="relative mb-12">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search flows..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#3a4450] border border-gray-600 rounded-lg pl-12 pr-4 py-3 text-gray-300 placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"
-          />
-        </div>
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Sidebar */}
+        <aside 
+          className="bg-[#2c3440] border-r border-gray-700 w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
+        >
+          {/* Fixed Header Section */}
+          <div className="flex-shrink-0 p-4 space-y-2 bg-[#2c3440]">
+            {/* Search in sidebar */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search flows..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#3a4450] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
+              />
+            </div>
 
-        {loading ? (
-          <div className="text-center text-gray-500 py-12">Loading flows...</div>
-        ) : filteredFlows.length > 0 ? (
-          <>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm uppercase tracking-wider text-gray-500">
-                Recently Modified
-              </h3>
+            {/* All Flows */}
+            <div className="mb-2">
               <button
-                onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
-                className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                onClick={() => handleCategoryClick('All')}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  selectedCategory === 'All'
+                    ? 'bg-[#3a4450] text-gray-200'
+                    : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                }`}
               >
-                Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
+                <GitBranch className="w-4 h-4" />
+                <span className="flex-1 text-left">All Flows</span>
+                <span className="text-xs text-gray-600">{flows.length}</span>
               </button>
             </div>
 
-            <div className="space-y-6">
-              {filteredFlows.map((flow) => (
-                <div
-                  key={flow.id}
-                  className="group relative bg-[#3a4450] rounded-lg p-4 hover:bg-[#424d5a] transition-colors cursor-pointer"
-                  onClick={() => onNavigateToFlow(flow.id)}
+            {/* Unfiled Flows */}
+            {unfiled.length > 0 && (
+              <div className="mb-2">
+                <button
+                  onClick={() => handleCategoryClick('Unfiled')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCategory === 'Unfiled'
+                      ? 'bg-[#3a4450] text-white'
+                      : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                  }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-lg text-gray-300 group-hover:text-white transition-colors mb-2">
-                        {flow.title}
-                      </h4>
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
-                        <span>{formatDate(flow.updated_at)}</span>
-                        <span>{flow.nodes.length} node{flow.nodes.length !== 1 ? 's' : ''}</span>
-                        <span>{flow.edges.length} connection{flow.edges.length !== 1 ? 's' : ''}</span>
-                      </div>
-                      {flow.tags && flow.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {flow.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-[#2c3440] text-gray-400 text-xs rounded"
+                  <GitBranch className="w-4 h-4" />
+                  <span className="flex-1 text-left">Unfiled</span>
+                  <span className="text-xs text-gray-600">{unfiled.length}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Categories Header */}
+            <div className="flex items-center justify-between px-3 py-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</span>
+              <button
+                onClick={handleCreateCategory}
+                className="text-xs text-gray-500 hover:text-gray-300 p-1"
+                title="New Category"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable Categories List */}
+          <div 
+            className="flex-1 overflow-y-auto sidebar-scroll-container px-4 pb-4"
+            style={{ 
+              scrollbarWidth: 'none', /* Firefox */
+              msOverflowStyle: 'none', /* IE and Edge */
+            }}
+          >
+            <div className="space-y-1">
+              {sortedCategories.length === 0 && (
+                <div className="px-3 pb-2 text-xs text-gray-500 flex items-center gap-2">
+                  <span>No categories yet</span>
+                  <button
+                    onClick={handleCreateCategory}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-[#3a4450]"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>New category</span>
+                  </button>
+                </div>
+              )}
+              {sortedCategories.map((categoryName) => {
+                  const categoryFlows = organized[categoryName] || [];
+                  const isExpanded = expandedCategories.has(categoryName);
+                  const filteredCategoryFlows = searchQuery
+                    ? categoryFlows.filter(
+                        (flow) =>
+                          flow.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          flow.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          flow.nodes.some((node) => node.data.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                      )
+                    : categoryFlows;
+
+                  return (
+                    <div key={categoryName} className="mb-1">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleCategory(categoryName)}
+                          className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                          title={isExpanded ? 'Collapse' : 'Expand'}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </button>
+                        <div className={`group flex-1 flex items-center gap-2 px-1 rounded-lg text-sm min-w-0`}>
+                          <button
+                            onClick={() => handleCategoryClick(categoryName)}
+                            className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-colors min-w-0 ${
+                              selectedCategory === categoryName
+                                ? 'bg-[#3a4450] text-white'
+                                : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                            }`}
+                          >
+                          {isExpanded ? (
+                            <FolderOpen className="w-4 h-4 flex-shrink-0" />
+                          ) : (
+                            <Folder className="w-4 h-4 flex-shrink-0" />
+                          )}
+                          <span className="flex-1 text-left truncate">
+                            {categoryName}
+                          </span>
+                          </button>
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 pr-2">
+                            <button
+                              title="Rename category"
+                              onClick={() => handleRenameCategory(categoryName)}
+                              className="p-1 text-gray-500 hover:text-gray-300 rounded"
                             >
-                              {tag}
-                            </span>
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              title="Delete category"
+                              onClick={() => handleDeleteCategoryClick(categoryName)}
+                              className="p-1 text-gray-500 hover:text-red-400 rounded"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      {isExpanded && filteredCategoryFlows.length > 0 && (
+                        <div className="ml-7 mt-1 space-y-0.5">
+                          {filteredCategoryFlows.map((flow) => (
+                            <div key={flow.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-gray-400 hover:bg-[#3a4450] hover:text-gray-200 transition-colors truncate min-w-0">
+                              <GitBranch className="w-3 h-3 flex-shrink-0" />
+                              <button
+                                onClick={() => onNavigateToFlow(flow.id)}
+                                className="flex-1 text-left truncate"
+                                title={flow.title}
+                              >
+                                {flow.title}
+                              </button>
+                              <button
+                                title="Edit flow"
+                                onClick={() => onNavigateToFlow(flow.id)}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-gray-300 rounded"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                              <button
+                                title="Delete flow"
+                                onClick={() => {
+                                  setFlowToDelete(flow.id);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 rounded"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => handleDeleteFlow(flow.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-[#2c3440] rounded transition-all"
-                      title="Delete flow"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+
+              {/* Empty state intentionally minimal - no extra call-to-action here */}
+              {sortedCategories.length === 0 && unfiled.length === 0 && !loading && null}
             </div>
-          </>
-        ) : (
-          <div className="text-center text-gray-500 py-12">
-            {searchQuery ? 'No flows found' : 'No flows yet. Create your first flow!'}
           </div>
-        )}
-      </main>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 h-full flex flex-col">
+          {/* Fixed Header Section */}
+          <div className="flex-shrink-0 bg-[#2c3440] border-b border-gray-700">
+            <div className="max-w-5xl mx-auto px-6 py-6">
+              {!loading && (
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm uppercase tracking-wider text-gray-500">
+                    {selectedCategory === 'All' ? 'All Flows' : selectedCategory === 'Unfiled' ? 'Unfiled Flows' : `Flows in "${selectedCategory}"`}
+                  </h3>
+                  {filteredFlows.length > 0 && (
+                    <button
+                      onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
+                      className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                    >
+                      Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable Flows List */}
+          <div 
+            className="flex-1 overflow-y-auto content-scroll-container"
+            style={{ 
+              scrollbarWidth: 'none', /* Firefox */
+              msOverflowStyle: 'none', /* IE and Edge */
+            }}
+          >
+            <div className="max-w-5xl mx-auto px-6 py-12">
+              {loading ? (
+                <div className="text-center text-gray-500 py-12">Loading flows...</div>
+              ) : filteredFlows.length > 0 ? (
+                <div className="space-y-6">
+                  {filteredFlows.map((flow) => (
+                    <div
+                      key={flow.id}
+                      className="group relative bg-[#3a4450] rounded-lg p-4 hover:bg-[#424d5a] transition-colors cursor-pointer"
+                      onClick={() => onNavigateToFlow(flow.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-lg text-gray-300 group-hover:text-white transition-colors mb-2">
+                            {flow.title}
+                          </h4>
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                            <span>{formatDate(flow.updated_at)}</span>
+                            <span>{flow.nodes.length} node{flow.nodes.length !== 1 ? 's' : ''}</span>
+                            <span>{flow.edges.length} connection{flow.edges.length !== 1 ? 's' : ''}</span>
+                          </div>
+                          {flow.tags && flow.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2 mb-2">
+                              {flow.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-2 py-1 bg-[#2c3440] text-gray-400 text-xs rounded"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {selectedCategory === 'All' && (
+                            <span className="px-2 py-0.5 rounded bg-[#2c3440] border border-gray-700 text-gray-400 text-xs">
+                              {flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <select
+                            onClick={(e) => e.stopPropagation()}
+                            value={flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
+                            onChange={(e) => handleAssignCategory(flow.id, e.target.value)}
+                            title={flow.category || 'Unfiled'}
+                            className="text-sm bg-[#2c3440] border border-gray-700 rounded px-2 py-1 text-gray-300 max-w-[200px]"
+                          >
+                            <option value="Unfiled">Unfiled</option>
+                            {categories.filter((c) => c !== 'All' && c !== 'Unfiled').map((c) => (
+                              <option key={c} value={c}>{c.length > 40 ? `${c.slice(0, 37)}...` : c}</option>
+                            ))}
+                            <option value="__new__">+ New category…</option>
+                          </select>
+                          <button
+                            onClick={(e) => handleDeleteFlow(flow.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-[#2c3440] rounded transition-all"
+                            title="Delete flow"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-12">
+                  {searchQuery ? 'No flows found' : selectedCategory === 'All' ? 'No flows yet. Create your first flow!' : `No flows in "${selectedCategory}"`}
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
 
       <button
         onClick={handleNewFlow}
@@ -329,7 +712,141 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
         isOpen={showSettingsDialog}
         onClose={() => setShowSettingsDialog(false)}
       />
+
+      {showCategoryDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-light text-gray-200">{categoryToRename ? 'Rename Category' : 'New Category'}</h2>
+                <button
+                  onClick={() => {
+                    setShowCategoryDialog(false);
+                    setAssignAfterCreateFlowId(null);
+                    setNewCategoryName('');
+                    setCategoryToRename(null);
+                  }}
+                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-3">Category name</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter category name..."
+                  className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+                <button
+                  onClick={() => {
+                    setShowCategoryDialog(false);
+                    setAssignAfterCreateFlowId(null);
+                    setNewCategoryName('');
+                    setCategoryToRename(null);
+                  }}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCreateCategory}
+                  disabled={!newCategoryName.trim()}
+                  className="px-5 py-2.5 text-sm font-medium bg-[#e8935f] hover:bg-[#d8834f] text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#e8935f] shadow-lg hover:shadow-xl"
+                >
+                  {categoryToRename ? 'Rename' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryDeleteDialog && categoryToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-light text-gray-200">Delete Category</h2>
+                <button
+                  onClick={() => {
+                    setShowCategoryDeleteDialog(false);
+                    setCategoryToDelete(null);
+                  }}
+                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-6 space-y-6">
+              {categoryDeleteCount > 0 ? (
+                <>
+                  <div className="text-gray-300">
+                    <div className="mb-2">The category</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                    <div className="mt-3">contains flows. What would you like to do?</div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => confirmDeleteCategory('move-to-unfiled')}
+                      className="px-5 py-2.5 text-sm font-medium bg-[#3a4450] hover:bg-[#424d5a] text-gray-100 rounded-lg transition-all text-left"
+                    >
+                      Move flows to Unfiled and delete category
+                    </button>
+                    <button
+                      onClick={() => confirmDeleteCategory('delete-flows')}
+                      className="px-5 py-2.5 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all text-left"
+                    >
+                      Delete category and all flows inside
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-gray-300">
+                    <div className="mb-2">Delete empty category</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => {
+                        setShowCategoryDeleteDialog(false);
+                        setCategoryToDelete(null);
+                        setCategoryDeleteCount(0);
+                      }}
+                      className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => confirmDeleteCategory('move-to-unfiled')}
+                      className="px-5 py-2.5 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all"
+                    >
+                      Delete category
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      <style>{`
+        .sidebar-scroll-container::-webkit-scrollbar,
+        .content-scroll-container::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
+        }
+      `}</style>
     </div>
   );
 }
-

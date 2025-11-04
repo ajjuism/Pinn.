@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { FileText, X, Search, Trash2, Tag, Palette, Edit2, Clock, PlusCircle, Calendar, ChevronLeft, Check, HelpCircle, GitBranch, AlertCircle, CheckCircle2, Book } from 'lucide-react';
-import { getFlowById, saveFlow, createFlow as createFlowStorage, Flow, FlowNode, FlowEdge, removeNodeFromFlow } from '../lib/flowStorage';
+import { getFlowById, saveFlow, createFlow as createFlowStorage, Flow, FlowNode, FlowEdge, removeNodeFromFlow, setFlowCategory } from '../lib/flowStorage';
 import { getNotes, getNoteById, saveNote, createNote, Note } from '../lib/storage';
 import MarkdownPreview from './MarkdownPreview';
 
@@ -175,6 +175,12 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
       setFlowTitle('Untitled Flow');
       setNodes([]);
       setEdges([]);
+      // Check for pending category from FlowsPage
+      const pendingCategory = localStorage.getItem('pinn.pendingFlowCategory');
+      if (pendingCategory) {
+        setFlowCategory(newFlow.id, pendingCategory);
+        localStorage.removeItem('pinn.pendingFlowCategory');
+      }
     }
   }, [flowId]);
 
