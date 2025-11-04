@@ -161,15 +161,32 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
   const wrapSelection = (prefix: string, suffix: string = prefix) => {
     const textarea = editorRef.current;
     if (!textarea) return;
+    
+    // Focus the textarea first
+    textarea.focus();
+    
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
-    const before = content.slice(0, start);
     const selected = content.slice(start, end);
-    const after = content.slice(end);
-    const next = `${before}${prefix}${selected || 'text'}${suffix}${after}`;
-    setContent(next);
+    const textToInsert = selected || 'text';
+    
+    // Use execCommand to make it undoable
+    // First, delete selection if any
+    if (selected) {
+      textarea.setSelectionRange(start, end);
+      document.execCommand('delete', false);
+    }
+    
+    // Insert the wrapped text
+    const wrappedText = `${prefix}${textToInsert}${suffix}`;
+    document.execCommand('insertText', false, wrappedText);
+    
+    // Update React state to stay in sync
+    const newContent = textarea.value;
+    setContent(newContent);
+    
     // Restore selection roughly around inserted text
-    const cursorPos = start + prefix.length + (selected ? selected.length : 4);
+    const cursorPos = textarea.selectionStart;
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(cursorPos, cursorPos);
@@ -179,16 +196,43 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
   const applyToSelectedLines = (linePrefix: string) => {
     const textarea = editorRef.current;
     if (!textarea) return;
+    
+    // Focus the textarea first
+    textarea.focus();
+    
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
-    const before = content.slice(0, start);
     const selected = content.slice(start, end);
-    const after = content.slice(end);
-    const selection = selected || '';
-    const lines = selection.split(/\n/);
-    const transformed = lines.map((l) => `${linePrefix}${l.replace(/^\s*/, '')}`).join('\n');
-    const next = `${before}${transformed}${after}`;
-    setContent(next);
+    
+    if (!selected) {
+      // If no selection, select the current line
+      const textBefore = content.slice(0, start);
+      const lineStart = textBefore.lastIndexOf('\n') + 1;
+      const textAfter = content.slice(start);
+      const lineEnd = textAfter.indexOf('\n');
+      const actualEnd = lineEnd === -1 ? content.length : start + lineEnd;
+      textarea.setSelectionRange(lineStart, actualEnd);
+      const lineText = content.slice(lineStart, actualEnd);
+      
+      // Delete and insert with prefix
+      document.execCommand('delete', false);
+      const transformed = `${linePrefix}${lineText.replace(/^\s*/, '')}`;
+      document.execCommand('insertText', false, transformed);
+    } else {
+      // Delete selection
+      textarea.setSelectionRange(start, end);
+      document.execCommand('delete', false);
+      
+      // Transform lines and insert
+      const lines = selected.split(/\n/);
+      const transformed = lines.map((l) => `${linePrefix}${l.replace(/^\s*/, '')}`).join('\n');
+      document.execCommand('insertText', false, transformed);
+    }
+    
+    // Update React state to stay in sync
+    const newContent = textarea.value;
+    setContent(newContent);
+    
     requestAnimationFrame(() => {
       textarea.focus();
     });
@@ -197,13 +241,27 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
   const insertAtCursor = (text: string) => {
     const textarea = editorRef.current;
     if (!textarea) return;
+    
+    // Focus the textarea first
+    textarea.focus();
+    
     const start = textarea.selectionStart ?? 0;
     const end = textarea.selectionEnd ?? 0;
-    const before = content.slice(0, start);
-    const after = content.slice(end);
-    const next = `${before}${text}${after}`;
-    setContent(next);
-    const cursorPos = start + text.length;
+    
+    // Delete selection if any
+    if (start !== end) {
+      textarea.setSelectionRange(start, end);
+      document.execCommand('delete', false);
+    }
+    
+    // Insert text using execCommand to make it undoable
+    document.execCommand('insertText', false, text);
+    
+    // Update React state to stay in sync
+    const newContent = textarea.value;
+    setContent(newContent);
+    
+    const cursorPos = textarea.selectionStart;
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(cursorPos, cursorPos);
@@ -312,18 +370,29 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
         wrapSelection('*');
       } else if ((e.key === 'k' || e.key === 'K') && modKey && !e.shiftKey) {
         e.preventDefault();
+        textarea.focus();
         const start = textarea.selectionStart ?? 0;
         const end = textarea.selectionEnd ?? 0;
-        const before = content.slice(0, start);
         const selected = content.slice(start, end);
-        const after = content.slice(end);
         const linkText = selected || 'link text';
         const linkMarkdown = `[${linkText}](https://)`;
-        const next = `${before}${linkMarkdown}${after}`;
-        setContent(next);
+        
+        // Delete selection if any
+        if (selected) {
+          textarea.setSelectionRange(start, end);
+          document.execCommand('delete', false);
+        }
+        
+        // Insert link markdown using execCommand to make it undoable
+        document.execCommand('insertText', false, linkMarkdown);
+        
+        // Update React state to stay in sync
+        const newContent = textarea.value;
+        setContent(newContent);
+        
         // Select the URL part (https://) for easy editing
-        const urlStart = start + linkText.length + 3; // After '[link text]('
-        const urlEnd = urlStart + 8; // Length of 'https://'
+        const urlStart = textarea.selectionStart - 8; // Length of 'https://'
+        const urlEnd = textarea.selectionStart;
         requestAnimationFrame(() => {
           if (textarea) {
             textarea.focus();
@@ -644,14 +713,24 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
       setShowComparisonDialog(true);
     } else {
       // Append to end of content (no comparison needed)
-      const newContent = content ? `${content}\n\n${generatedText}` : generatedText;
+      // Use execCommand to make it undoable
+      textarea.focus();
+      const endPos = content.length;
+      textarea.setSelectionRange(endPos, endPos);
+      
+      // Insert newline and text
+      const textToInsert = content ? `\n\n${generatedText}` : generatedText;
+      document.execCommand('insertText', false, textToInsert);
+      
+      // Update React state to stay in sync
+      const newContent = textarea.value;
       setContent(newContent);
       
       // Move cursor to end
       requestAnimationFrame(() => {
         textarea.focus();
-        const endPos = newContent.length;
-        textarea.setSelectionRange(endPos, endPos);
+        const newEndPos = textarea.value.length;
+        textarea.setSelectionRange(newEndPos, newEndPos);
         textarea.scrollTop = textarea.scrollHeight;
       });
 
@@ -673,13 +752,21 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
     // Use edited text if provided, otherwise use original AI-generated text
     const textToInsert = editedText || aiComparison.newText;
     const { startPos, endPos } = aiComparison;
-    const before = content.slice(0, startPos);
-    const after = content.slice(endPos);
-    const newContent = `${before}${textToInsert}${after}`;
+    
+    // Use execCommand to make it undoable
+    textarea.focus();
+    textarea.setSelectionRange(startPos, endPos);
+    
+    // Delete selection and insert new text
+    document.execCommand('delete', false);
+    document.execCommand('insertText', false, textToInsert);
+    
+    // Update React state to stay in sync
+    const newContent = textarea.value;
     setContent(newContent);
 
     // Set cursor after inserted text
-    const newCursorPos = startPos + textToInsert.length;
+    const newCursorPos = textarea.selectionStart;
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(newCursorPos, newCursorPos);
