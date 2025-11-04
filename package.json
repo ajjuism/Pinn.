@@ -13,6 +13,8 @@
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
     "@xyflow/react": "^12.9.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/html2canvas": "^0.5.35",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

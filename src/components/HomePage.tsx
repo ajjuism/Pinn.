@@ -36,6 +36,18 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   useEffect(() => {
     loadNotes();
     loadFlows();
+    
+    // Listen for storage refresh events (e.g., after folder restore)
+    const handleStorageRefresh = () => {
+      loadNotes();
+      loadFlows();
+    };
+    
+    window.addEventListener('storage-refresh', handleStorageRefresh);
+    
+    return () => {
+      window.removeEventListener('storage-refresh', handleStorageRefresh);
+    };
   }, []);
 
   useEffect(() => {

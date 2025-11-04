@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Key, Info, Folder, FolderOpen, AlertCircle, Database } from 'lucide-react';
 import { getGeminiApiKey, saveGeminiApiKey } from '../lib/geminiStorage';
-import { getFolderPath, requestDirectoryAccess, setDirectoryHandle, clearDirectoryHandle, isFileSystemSupported, isFolderConfigured } from '../lib/fileSystemStorage';
+import { getFolderPath, requestDirectoryAccess, setDirectoryHandle, clearDirectoryHandle, isFileSystemSupported, isFolderConfigured, hasDirectoryAccess, restoreDirectoryAccess } from '../lib/fileSystemStorage';
 import { refreshStorage } from '../lib/storage';
 import { refreshFlowStorage } from '../lib/flowStorage';
 
@@ -20,6 +20,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
   const [folderPath, setFolderPath] = useState<string | null>(null);
   const [isChangingFolder, setIsChangingFolder] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
+  const [isRestoringAccess, setIsRestoringAccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +30,33 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
       setFolderError(null);
     }
   }, [isOpen]);
+
+  const handleRestoreAccess = async () => {
+    setIsRestoringAccess(true);
+    setFolderError(null);
+    try {
+      const success = await restoreDirectoryAccess();
+      if (success) {
+        // Refresh storage to load from file system
+        await refreshStorage();
+        await refreshFlowStorage();
+        
+        // Trigger storage refresh event so all components reload their data
+        window.dispatchEvent(new CustomEvent('storage-refresh'));
+        
+        if (onFolderChange) {
+          onFolderChange();
+        }
+      } else {
+        setFolderError('Failed to restore access. Please try selecting the folder again.');
+      }
+    } catch (error: any) {
+      console.error('Error restoring access:', error);
+      setFolderError(error.message || 'Failed to restore access. Please try again.');
+    } finally {
+      setIsRestoringAccess(false);
+    }
+  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -56,7 +84,10 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
     setFolderError(null);
 
     try {
-      const handle = await requestDirectoryAccess();
+      // If folder is already configured, try to restore it first (allowReuse = true)
+      // This will attempt to restore the existing handle if permission can be re-granted
+      // Otherwise, it will prompt for a new folder selection
+      const handle = await requestDirectoryAccess('Pinn', true);
       if (handle) {
         await setDirectoryHandle(handle, handle.name);
         setFolderPath(handle.name);
@@ -64,6 +95,9 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
         // Refresh storage to load data from new location
         await refreshStorage();
         await refreshFlowStorage();
+        
+        // Trigger storage refresh event so all components reload their data
+        window.dispatchEvent(new CustomEvent('storage-refresh'));
         
         if (onFolderChange) {
           onFolderChange();
@@ -83,6 +117,14 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
     if (window.confirm('Are you sure you want to remove the folder selection? You will need to select a folder again to use file system storage.')) {
       await clearDirectoryHandle();
       setFolderPath(null);
+      
+      // Refresh storage to fall back to localStorage
+      await refreshStorage();
+      await refreshFlowStorage();
+      
+      // Trigger storage refresh event so all components reload their data
+      window.dispatchEvent(new CustomEvent('storage-refresh'));
+      
       if (onFolderChange) {
         onFolderChange();
       }
@@ -176,9 +218,45 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                               <p className="text-sm text-gray-200 truncate font-medium" title={folderPath}>
                                 {folderPath}
                               </p>
+                              {!hasDirectoryAccess() && (
+                                <p className="text-xs text-yellow-400 mt-1 flex items-center gap-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  Access needs to be restored
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
+                        {!hasDirectoryAccess() && (
+                          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-yellow-400 mb-1">Folder Access Required</p>
+                                <p className="text-xs text-yellow-400/90 mb-3">
+                                  Your folder is configured, but permission needs to be re-granted. Click the button below to restore access.
+                                </p>
+                                <button
+                                  onClick={handleRestoreAccess}
+                                  disabled={isRestoringAccess}
+                                  className="px-4 py-2 text-sm font-medium bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                  {isRestoringAccess ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-300"></div>
+                                      <span>Restoring...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Folder className="w-4 h-4" />
+                                      <span>Restore Access</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex gap-3 justify-end">
                           <button
                             onClick={handleChangeFolder}

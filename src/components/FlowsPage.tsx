@@ -25,6 +25,17 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
 
   useEffect(() => {
     loadFlows();
+    
+    // Listen for storage refresh events (e.g., after folder restore)
+    const handleStorageRefresh = () => {
+      loadFlows();
+    };
+    
+    window.addEventListener('storage-refresh', handleStorageRefresh);
+    
+    return () => {
+      window.removeEventListener('storage-refresh', handleStorageRefresh);
+    };
   }, []);
 
   useEffect(() => {

@@ -41,9 +41,13 @@ async function initialize(): Promise<void> {
       console.log('Storage initialization:', { folderConfigured, hasAccess });
       
       // If folder is configured but handle isn't available, try to restore it
+      // This is important because initializeDirectoryHandle might have been called before
+      // but failed silently, so we try again here with a small delay
       if (folderConfigured && !hasAccess) {
         console.log('Storage initialization: Folder configured but handle not available, attempting to restore...');
         const { initializeDirectoryHandle } = await import('./fileSystemStorage');
+        // Give a small delay to ensure any previous initialization attempts have completed
+        await new Promise(resolve => setTimeout(resolve, 50));
         await initializeDirectoryHandle();
         hasAccess = hasDirectoryAccess();
         console.log('Storage initialization: After handle restoration attempt, hasAccess:', hasAccess);

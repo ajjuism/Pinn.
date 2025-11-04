@@ -94,29 +94,17 @@ async function restoreHandleFromIndexedDB(): Promise<FileSystemDirectoryHandle |
         console.log('restoreHandleFromIndexedDB: Could not request permission automatically (user gesture may be required):', permError);
       }
       
-      // Even if permission is 'prompt', try to use the handle
-      // Some browsers allow access even when permission state is 'prompt'
-      // We'll test actual access by trying to read a file
-      try {
-        // Try to verify we can actually access the directory
-        // by attempting to get the keys (this requires permission)
-        const entries: string[] = [];
-        for await (const entry of handle.keys()) {
-          entries.push(entry);
-          break; // Just check if we can iterate, don't need all entries
-        }
-        console.log('restoreHandleFromIndexedDB: Directory handle verified - can access directory (permission state: prompt, but access works)');
-        return handle;
-      } catch (accessError: any) {
-        // If we can't access, permission was likely revoked
-        console.warn('restoreHandleFromIndexedDB: Cannot access directory even though handle exists:', accessError);
-        await clearHandleFromIndexedDB();
-        return null;
-      }
+      // Permission is 'prompt' - return the handle anyway
+      // The handle exists and can be restored with user gesture
+      // Don't try to access it here as it requires user gesture
+      // But we should return the handle so it can be used when user clicks restore
+      console.log('restoreHandleFromIndexedDB: Permission is prompt - returning handle for user gesture restoration');
+      return handle; // Return the handle - it can be restored with user gesture
     } else {
-      // Permission was denied, remove from IndexedDB
+      // Permission was denied - don't clear the handle, just return null
+      // User might want to try restoring it, or they can re-select
       console.warn('restoreHandleFromIndexedDB: Directory permission was denied');
-      await clearHandleFromIndexedDB();
+      // Don't clear handle - let user try to restore it or re-select
       return null;
     }
   } catch (error) {
@@ -170,13 +158,171 @@ export function hasDirectoryAccess(): boolean {
 }
 
 /**
+ * Restore directory access with user gesture (for permission re-grant)
+ * This should be called from a user interaction (button click)
+ * If handle is missing, will automatically prompt user to re-select folder
+ */
+export async function restoreDirectoryAccess(): Promise<boolean> {
+  if (!isFolderConfigured()) {
+    console.log('restoreDirectoryAccess: Folder not configured');
+    throw new Error('Folder not configured. Please select a folder first.');
+  }
+
+  try {
+    console.log('restoreDirectoryAccess: Attempting to restore handle from IndexedDB...');
+    
+    // First, try to get handle directly from IndexedDB
+    // This is important because we want to keep the handle even if permission check fails
+    let handle: FileSystemDirectoryHandle | null = null;
+    try {
+      const db = await getDB();
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      handle = await new Promise<FileSystemDirectoryHandle | null>((resolve, reject) => {
+        const request = store.get('handle');
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    } catch (dbError) {
+      console.error('restoreDirectoryAccess: Error reading from IndexedDB:', dbError);
+      throw new Error('Could not access stored folder information.');
+    }
+    
+    // If handle doesn't exist in IndexedDB, automatically prompt user to re-select folder
+    if (!handle) {
+      console.log('restoreDirectoryAccess: No handle found in IndexedDB, prompting user to re-select folder...');
+      // Automatically prompt for folder selection
+      if (!isFileSystemSupported()) {
+        throw new Error('File System Access API is not supported in this browser.');
+      }
+      
+      const newHandle = await window.showDirectoryPicker({
+        mode: 'readwrite',
+      });
+      
+      if (!newHandle) {
+        // User cancelled
+        return false;
+      }
+      
+      // Set the new handle
+      await setDirectoryHandle(newHandle, newHandle.name);
+      directoryHandle = newHandle;
+      console.log('restoreDirectoryAccess: Successfully re-selected folder');
+      return true;
+    }
+
+    // Handle exists - now request permission with user gesture
+    console.log('restoreDirectoryAccess: Handle found, requesting permission with user gesture...');
+    
+    // First check current permission state
+    let permission = await handle.queryPermission({ mode: 'readwrite' });
+    console.log('restoreDirectoryAccess: Initial permission state:', permission);
+    
+    // If permission is not granted, request it (user gesture available from button click)
+    if (permission !== 'granted') {
+      console.log('restoreDirectoryAccess: Requesting permission with user gesture...');
+      try {
+        permission = await handle.requestPermission({ mode: 'readwrite' });
+        console.log('restoreDirectoryAccess: Permission after request:', permission);
+      } catch (permError: any) {
+        console.error('restoreDirectoryAccess: Error requesting permission:', permError);
+        // If requestPermission fails, try to verify if handle works anyway
+        permission = 'prompt'; // Treat as prompt so we try verification
+      }
+    }
+
+    // If permission is granted, use the handle
+    if (permission === 'granted') {
+      console.log('restoreDirectoryAccess: Permission granted, setting handle...');
+      directoryHandle = handle;
+      await storeHandleInIndexedDB(handle);
+      console.log('restoreDirectoryAccess: Successfully restored access');
+      return true;
+    }
+    
+    // If permission is still 'prompt' or we got an error, try to verify access
+    // Sometimes browsers allow access even when permission state is 'prompt'
+    console.log('restoreDirectoryAccess: Permission not granted, verifying if handle works...');
+    try {
+      // Try to verify we can access the directory
+      const entries: string[] = [];
+      for await (const entry of handle.keys()) {
+        entries.push(entry);
+        break; // Just check if we can iterate
+      }
+      // If we can access it, permission is effectively granted
+      console.log('restoreDirectoryAccess: Can access directory, treating as granted');
+      directoryHandle = handle;
+      await storeHandleInIndexedDB(handle);
+      return true;
+    } catch (accessError: any) {
+      console.error('restoreDirectoryAccess: Cannot access directory:', accessError);
+      // Can't access - the handle might be stale or permission was revoked
+      // On macOS Chrome, requestPermission might trigger folder picker instead of permission dialog
+      // So we need to let user re-select the folder
+      // Since we know the folder path, we can guide them to select the same folder
+      console.log('restoreDirectoryAccess: Access failed, prompting user to re-select folder (same folder is fine)');
+      
+      // Prompt user to select folder - they should select the same one
+      const newHandle = await window.showDirectoryPicker({
+        mode: 'readwrite',
+      });
+      
+      if (!newHandle) {
+        return false;
+      }
+      
+      // Set the new handle (even if it's the same folder)
+      await setDirectoryHandle(newHandle, newHandle.name);
+      directoryHandle = newHandle;
+      console.log('restoreDirectoryAccess: Successfully re-selected folder');
+      return true;
+    }
+  } catch (error: any) {
+    console.error('Error restoring directory access:', error);
+    // Re-throw to provide better error message, but don't show error if user cancelled
+    if (error.name === 'AbortError') {
+      return false;
+    }
+    if (error.message) {
+      throw error;
+    }
+    throw new Error('Failed to restore directory access. Please try again.');
+  }
+}
+
+/**
  * Request user to select or create a directory
  * @param defaultName - Suggested default directory name
+ * @param allowReuse - If true and folder is configured, try to restore handle first
  */
-export async function requestDirectoryAccess(defaultName: string = 'Pinn'): Promise<FileSystemDirectoryHandle | null> {
+export async function requestDirectoryAccess(defaultName: string = 'Pinn', allowReuse: boolean = false): Promise<FileSystemDirectoryHandle | null> {
   try {
     if (!isFileSystemSupported()) {
       throw new Error('File System Access API is not supported in this browser');
+    }
+
+    // If folder is configured and we're trying to reuse it, try to restore handle first
+    if (allowReuse && isFolderConfigured() && !directoryHandle) {
+      console.log('requestDirectoryAccess: Folder configured, attempting to restore handle...');
+      const restored = await restoreHandleFromIndexedDB();
+      if (restored) {
+        // Verify we can still access it
+        try {
+          let permission = await restored.queryPermission({ mode: 'readwrite' });
+          if (permission === 'prompt') {
+            permission = await restored.requestPermission({ mode: 'readwrite' });
+          }
+          if (permission === 'granted') {
+            directoryHandle = restored;
+            console.log('requestDirectoryAccess: Successfully restored existing handle');
+            return restored;
+          }
+        } catch (permError) {
+          console.log('requestDirectoryAccess: Could not restore handle, will prompt for new selection');
+        }
+      }
     }
 
     // Request directory access
@@ -285,13 +431,16 @@ export async function initializeDirectoryHandle(): Promise<void> {
       console.log('initializeDirectoryHandle: Directory handle restored from IndexedDB, access available:', hasDirectoryAccess());
     } else {
       console.warn('initializeDirectoryHandle: Failed to restore directory handle - permission may need to be re-granted');
-      // If handle couldn't be restored, clear the configured flag so onboarding shows
-      localStorage.removeItem(FOLDER_CONFIGURED_KEY);
+      // Keep the folder configured flag - don't clear it
+      // The folder is still configured, just permission needs to be re-granted
+      // User can re-grant permission when they try to use file operations
+      console.log('initializeDirectoryHandle: Folder remains configured, but handle needs to be restored with user permission');
     }
   } catch (error) {
     console.error('initializeDirectoryHandle: Error initializing directory handle:', error);
-    // Clear configured flag on error so user can re-select
-    localStorage.removeItem(FOLDER_CONFIGURED_KEY);
+    // Keep the folder configured flag even on error
+    // The folder path is still stored, user just needs to re-grant permission
+    console.log('initializeDirectoryHandle: Folder remains configured despite error');
   } finally {
     isRestoringHandle = false;
     console.log('initializeDirectoryHandle: Completed, handle available:', hasDirectoryAccess());
@@ -300,10 +449,34 @@ export async function initializeDirectoryHandle(): Promise<void> {
 
 /**
  * Ensure we have directory access before operations
+ * If handle is not available but folder is configured, try to restore it
  */
 async function ensureDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
   if (!directoryHandle) {
-    throw new Error('No directory selected. Please select a folder in settings.');
+    // If folder is configured but handle is missing, try to restore it
+    if (isFolderConfigured()) {
+      console.log('ensureDirectoryAccess: Folder configured but handle missing, attempting to restore...');
+      const restored = await restoreHandleFromIndexedDB();
+      if (restored) {
+        // Try to request permission if needed
+        try {
+          let permission = await restored.queryPermission({ mode: 'readwrite' });
+          if (permission === 'prompt') {
+            permission = await restored.requestPermission({ mode: 'readwrite' });
+          }
+          if (permission === 'granted') {
+            directoryHandle = restored;
+            console.log('ensureDirectoryAccess: Successfully restored handle');
+            return restored;
+          }
+        } catch (permError) {
+          console.error('ensureDirectoryAccess: Could not restore permission:', permError);
+        }
+      }
+      throw new Error('Directory access was revoked. Please re-select your folder in settings to continue using file system storage.');
+    } else {
+      throw new Error('No directory selected. Please select a folder in settings.');
+    }
   }
   return directoryHandle;
 }

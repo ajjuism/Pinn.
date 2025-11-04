@@ -5,8 +5,8 @@ import FlowsPage from './components/FlowsPage';
 import FlowPage from './components/FlowPage';
 import NotesPage from './components/NotesPage';
 import OnboardingDialog from './components/OnboardingDialog';
-import { FileText } from 'lucide-react';
-import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess } from './lib/fileSystemStorage';
+import { FileText, Folder, X, AlertCircle } from 'lucide-react';
+import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess, restoreDirectoryAccess, getFolderPath } from './lib/fileSystemStorage';
 import { initStorage, refreshStorage } from './lib/storage';
 import { initFlowStorage, refreshFlowStorage } from './lib/flowStorage';
 
@@ -17,6 +17,8 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [needsPermissionRestore, setNeedsPermissionRestore] = useState(false);
+  const [isRestoringPermission, setIsRestoringPermission] = useState(false);
 
   // Detect mobile devices
   useEffect(() => {
@@ -36,6 +38,12 @@ function App() {
     const initialize = async () => {
       try {
         console.log('App initialization started');
+        
+        // Check if folder is configured FIRST (before trying to restore handle)
+        // This ensures we don't show onboarding if folder was previously configured
+        const folderConfigured = isFolderConfigured();
+        console.log('Folder configured check:', folderConfigured);
+        
         // First, restore directory handle from IndexedDB if configured
         await initializeDirectoryHandle();
         const handleAvailable = hasDirectoryAccess();
@@ -45,17 +53,23 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 10));
         
         // Initialize storage (will use file system or localStorage)
+        // Storage will use file system if folder is configured (even if handle needs re-granting)
         await initStorage();
         await initFlowStorage();
         console.log('Storage initialization completed');
         
-        // Check if folder is configured
-        const folderConfigured = isFolderConfigured();
+        // Only show onboarding if folder was never configured
+        // If folder is configured but handle is missing, we'll let the user use the app
+        // and they can re-grant permission when needed
         if (!folderConfigured) {
           console.log('No folder configured, showing onboarding');
           setShowOnboarding(true);
         } else {
-          console.log('Folder is configured');
+          console.log('Folder is configured, proceeding with app');
+          // Check if we need to show permission restore banner
+          if (!handleAvailable) {
+            setNeedsPermissionRestore(true);
+          }
         }
       } catch (error) {
         console.error('Error initializing app:', error);
@@ -78,12 +92,46 @@ function App() {
   useEffect(() => {
     if (!isInitializing && !showOnboarding) {
       const folderConfigured = isFolderConfigured();
+      const hasAccess = hasDirectoryAccess();
       if (!folderConfigured && !isMobile) {
         // Folder was removed, show onboarding
         setShowOnboarding(true);
+      } else if (folderConfigured && !hasAccess && !isMobile) {
+        // Folder configured but access missing, show restore banner
+        setNeedsPermissionRestore(true);
+      } else if (hasAccess) {
+        // Access is available, hide restore banner
+        setNeedsPermissionRestore(false);
       }
     }
   }, [isInitializing, showOnboarding, isMobile]);
+
+  const handleRestorePermission = async () => {
+    setIsRestoringPermission(true);
+    try {
+      console.log('Attempting to restore directory access...');
+      const success = await restoreDirectoryAccess();
+      console.log('Restore result:', success);
+      if (success) {
+        // Refresh storage to load from file system
+        await refreshStorage();
+        await refreshFlowStorage();
+        setNeedsPermissionRestore(false);
+        
+        // Trigger a storage refresh event so all components reload their data
+        window.dispatchEvent(new CustomEvent('storage-refresh'));
+      } else {
+        // User cancelled the folder selection
+        console.log('User cancelled folder selection');
+      }
+    } catch (error: any) {
+      console.error('Error restoring permission:', error);
+      // If there's an error, user can try again or go to settings
+      // Don't show error message - just let them try again
+    } finally {
+      setIsRestoringPermission(false);
+    }
+  };
 
   const navigateToHome = () => {
     setCurrentView('home');
@@ -163,23 +211,75 @@ function App() {
     );
   }
 
+  const folderPath = getFolderPath();
+
   return (
     <div className="min-h-screen bg-[#2c3440] text-gray-300">
       {showOnboarding ? (
         <OnboardingDialog onComplete={handleOnboardingComplete} />
       ) : (
         <>
-          {currentView === 'home' ? (
-            <HomePage onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToFlow={navigateToFlow} onNavigateToNotes={navigateToNotes} />
-          ) : currentView === 'editor' ? (
-            <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
-          ) : currentView === 'flows' ? (
-            <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
-          ) : currentView === 'notes' ? (
-            <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
-          ) : (
-            <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+          {/* Permission Restore Banner */}
+          {needsPermissionRestore && (
+            <div className="fixed top-0 left-0 right-0 z-50 bg-[#6366F1]/10 border-b border-[#6366F1]/30 backdrop-blur-sm">
+              <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-10 h-10 bg-[#6366F1]/20 rounded-lg flex items-center justify-center">
+                    <Folder className="w-5 h-5 text-[#6366F1]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-200">
+                      Folder access needs to be restored
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {folderPath ? `Your folder "${folderPath}" is configured. Click to restore access (you may need to select the same folder again).` : 'Your folder is configured. Click to restore access (you may need to select the same folder again).'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={handleRestorePermission}
+                    disabled={isRestoringPermission}
+                    className="px-4 py-2 text-sm font-medium bg-[#6366F1] hover:bg-[#5b5bf5] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6366F1] flex items-center gap-2"
+                  >
+                    {isRestoringPermission ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Restoring...</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Restore Access</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setNeedsPermissionRestore(false)}
+                    className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors flex-shrink-0"
+                    title="Dismiss"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
+
+          {/* Main Content - adjust padding if banner is visible */}
+          <div className={needsPermissionRestore ? 'pt-16' : ''}>
+            {currentView === 'home' ? (
+              <HomePage onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToFlow={navigateToFlow} onNavigateToNotes={navigateToNotes} />
+            ) : currentView === 'editor' ? (
+              <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+            ) : currentView === 'flows' ? (
+              <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
+            ) : currentView === 'notes' ? (
+              <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
+            ) : (
+              <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
+            )}
+          </div>
         </>
       )}
     </div>

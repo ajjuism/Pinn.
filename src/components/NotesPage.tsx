@@ -44,6 +44,17 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
 
   useEffect(() => {
     loadNotes();
+    
+    // Listen for storage refresh events (e.g., after folder restore)
+    const handleStorageRefresh = () => {
+      loadNotes();
+    };
+    
+    window.addEventListener('storage-refresh', handleStorageRefresh);
+    
+    return () => {
+      window.removeEventListener('storage-refresh', handleStorageRefresh);
+    };
   }, []);
 
   useEffect(() => {
