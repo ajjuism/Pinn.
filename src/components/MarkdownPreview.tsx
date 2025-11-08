@@ -28,11 +28,88 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
     }
   };
 
+  // Aggressively merge URLs into the same paragraph as surrounding text
+  const preprocessContent = (text: string): string => {
+    if (!text) return text;
+    
+    // Replace any newlines (single or multiple) around URLs with a single space
+    // This forces URLs to stay inline with text
+    let result = text;
+    
+    // Replace: text + newline(s) + URL with: text + space + URL
+    result = result.replace(/([^\n])\n+(?=https?:\/\/)/g, '$1 ');
+    
+    // Replace: URL + newline(s) + text with: URL + space + text
+    result = result.replace(/(https?:\/\/[^\s]+)\n+([^\n])/g, '$1 $2');
+    
+    // Special case: if a line is ONLY a URL, merge it
+    // Split into lines and process
+    const lines = result.split('\n');
+    const processed: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const isOnlyUrl = /^https?:\/\/[^\s]+$/.test(line);
+      
+      if (isOnlyUrl && processed.length > 0) {
+        // Append URL to previous line with a space
+        processed[processed.length - 1] += ' ' + line;
+      } else if (isOnlyUrl && i < lines.length - 1) {
+        // Prepend URL to next line with a space
+        const nextLine = lines[i + 1].trim();
+        if (nextLine) {
+          lines[i + 1] = line + ' ' + nextLine;
+        } else {
+          processed.push(line);
+        }
+      } else {
+        processed.push(lines[i]);
+      }
+    }
+    
+    return processed.join('\n');
+  };
+
+  const processedContent = preprocessContent(content);
+
   return (
     <div className="w-full prose prose-invert prose-gray max-w-none markdown-preview" style={{ minHeight: 'calc(100vh - 300px)' }}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{
+          text({ node, ...props }: any) {
+            // Render text nodes with inline URL detection
+            const text = node.value || '';
+            const urlPattern = /(https?:\/\/[^\s<>"{}|\\^`\[\]()]+)/g;
+            const parts = text.split(urlPattern);
+            
+            return (
+              <>
+                {parts.map((part, index) => {
+                  if (part.match(/^https?:\/\//)) {
+                    // This is a URL - render as inline link
+                    return (
+                      <a
+                        key={index}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="markdown-link"
+                        style={{
+                          display: 'inline',
+                          wordBreak: 'break-all',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {part}
+                      </a>
+                    );
+                  }
+                  return part;
+                })}
+              </>
+            );
+          },
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             const codeString = String(children).replace(/\n$/, '');
@@ -130,20 +207,27 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
             // We handle code blocks in the code component, so we just pass through
             return <pre {...props}>{children}</pre>;
           },
+          p({ node, children, ...props }: any) {
+            // Check if paragraph contains only a link
+            const hasOnlyLink = node.children?.length === 1 && node.children[0].type === 'link';
+            return (
+              <p {...props} style={{ display: 'block', margin: '0 0 1rem 0' }}>
+                {children}
+              </p>
+            );
+          },
           a({ node, href, children, ...props }: any) {
             return (
               <a
                 href={href}
+                target="_blank"
+                rel="noopener noreferrer"
                 {...props}
                 className="markdown-link"
                 style={{
-                  display: 'inline-block',
-                  maxWidth: '100%',
+                  display: 'inline',
                   wordBreak: 'break-all',
                   overflowWrap: 'anywhere',
-                  whiteSpace: 'normal',
-                  boxSizing: 'border-box',
-                  minWidth: 0,
                 }}
               >
                 {children}
@@ -152,7 +236,7 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
           },
         }}
       >
-        {content || ''}
+        {processedContent || ''}
       </ReactMarkdown>
       {!content && (
         <div className="text-gray-600 italic">Start writing your note...</div>
@@ -161,6 +245,10 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
         .markdown-preview {
           color: rgb(209, 213, 219);
           line-height: 1.625;
+        }
+        /* Override prose styles that might make links block-level */
+        .markdown-preview.prose a {
+          display: inline !important;
         }
         .markdown-preview h1 {
           font-size: 2.25rem;
@@ -211,29 +299,45 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
           word-wrap: break-word;
           overflow-wrap: break-word;
         }
-        .markdown-preview a {
-          color: rgb(229, 231, 235);
-          text-decoration: none;
-          background-color: rgba(96, 165, 250, 0.15);
-          border: 1px solid rgba(96, 165, 250, 0.3);
-          padding: 0.25rem 0.625rem;
-          border-radius: 0.375rem;
-          display: inline-block;
-          font-size: 0.875rem;
-          font-weight: 500;
-          transition: all 0.2s ease;
-          line-height: 1.4;
-          word-break: break-all;
-          overflow-wrap: anywhere;
-          max-width: 100%;
-          white-space: normal;
-          box-sizing: border-box;
-          min-width: 0;
+        .markdown-preview p:has(a) {
+          display: block !important;
         }
-        .markdown-preview a:hover {
-          background-color: rgba(96, 165, 250, 0.25);
-          border-color: rgba(96, 165, 250, 0.5);
-          color: rgb(219, 234, 254);
+        .markdown-preview p a {
+          display: inline !important;
+        }
+        .markdown-preview a,
+        .markdown-preview .markdown-link,
+        .markdown-preview p a,
+        .markdown-preview li a,
+        .markdown-preview span a {
+          color: rgb(147, 197, 253) !important;
+          text-decoration: underline !important;
+          text-decoration-color: rgba(96, 165, 250, 0.6) !important;
+          background-color: rgba(96, 165, 250, 0.15) !important;
+          border: 1px solid rgba(96, 165, 250, 0.4) !important;
+          padding: 0.125rem 0.5rem !important;
+          border-radius: 0.375rem !important;
+          display: inline !important;
+          font-size: inherit !important;
+          font-weight: 500 !important;
+          transition: all 0.2s ease !important;
+          line-height: 1.5 !important;
+          word-break: break-all !important;
+          overflow-wrap: anywhere !important;
+          white-space: normal !important;
+          cursor: pointer !important;
+          margin: 0 !important;
+          float: none !important;
+          clear: none !important;
+          width: auto !important;
+          max-width: none !important;
+        }
+        .markdown-preview a:hover,
+        .markdown-preview .markdown-link:hover {
+          background-color: rgba(96, 165, 250, 0.25) !important;
+          border-color: rgba(96, 165, 250, 0.6) !important;
+          color: rgb(219, 234, 254) !important;
+          text-decoration-color: rgba(96, 165, 250, 0.8) !important;
         }
         .markdown-preview ul, .markdown-preview ol {
           color: rgb(209, 213, 219);

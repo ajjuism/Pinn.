@@ -214,7 +214,70 @@ function parseInlineMarkdown(text: string): TextSegment[] {
     });
   }
   
-  return segments;
+  // Process segments to detect bare URLs in plain text
+  const urlPattern = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+  const processedSegments: TextSegment[] = [];
+  
+  for (const segment of segments) {
+    // Only process plain text segments (not already formatted)
+    if (!segment.bold && !segment.italic && !segment.code && !segment.strikethrough && !segment.link && !segment.isImage) {
+      const text = segment.text;
+      let lastIndex = 0;
+      let urlMatch: RegExpExecArray | null;
+      
+      // Reset regex lastIndex
+      urlPattern.lastIndex = 0;
+      
+      let foundUrl = false;
+      while ((urlMatch = urlPattern.exec(text)) !== null) {
+        foundUrl = true;
+        // Add text before the URL
+        if (urlMatch.index > lastIndex) {
+          processedSegments.push({
+            text: text.substring(lastIndex, urlMatch.index),
+            bold: false,
+            italic: false,
+            code: false,
+            strikethrough: false,
+          });
+        }
+        
+        // Add the URL as a link
+        const url = urlMatch[1];
+        processedSegments.push({
+          text: url,
+          bold: false,
+          italic: false,
+          code: false,
+          strikethrough: false,
+          link: url,
+        });
+        
+        lastIndex = urlMatch.index + urlMatch[0].length;
+      }
+      
+      // If no URLs found, add the entire segment as-is
+      if (!foundUrl) {
+        processedSegments.push(segment);
+      } else {
+        // Add remaining text after last URL
+        if (lastIndex < text.length) {
+          processedSegments.push({
+            text: text.substring(lastIndex),
+            bold: false,
+            italic: false,
+            code: false,
+            strikethrough: false,
+          });
+        }
+      }
+    } else {
+      // Keep formatted segments as-is
+      processedSegments.push(segment);
+    }
+  }
+  
+  return processedSegments;
 }
 
 /**
@@ -465,13 +528,31 @@ export async function exportToPDF(title: string, content: string, filename?: str
       
       // Render text (links show URL in parentheses)
       if (segment.link) {
-        // Make link clickable
-        pdf.textWithLink(segment.text, x, y, { url: segment.link });
+        // Set color and font right before rendering to ensure it's applied
+        pdf.setTextColor(0, 85, 200); // Bright blue - very visible
+        if (segment.bold && segment.italic) {
+          pdf.setFont('helvetica', 'bolditalic');
+        } else if (segment.bold) {
+          pdf.setFont('helvetica', 'bold');
+        } else if (segment.italic) {
+          pdf.setFont('helvetica', 'italic');
+        } else {
+          pdf.setFont('helvetica', 'bold'); // Make links bold by default
+        }
+        
+        // Render text with blue color first
+        pdf.text(segment.text, x, y);
+        
+        // Then add the clickable link area on top
+        const textHeight = fontSize * 0.35277778;
+        pdf.link(x, y - textHeight, width, textHeight, { url: segment.link });
         
         // Add prominent underline to make links clearly visible
+        // In jsPDF, y is the baseline, so underline should be slightly below
         pdf.setDrawColor(0, 85, 200); // Bright blue to match link color
-        pdf.setLineWidth(0.4); // Thicker underline
-        pdf.line(x, y + 0.5, x + width, y + 0.5);
+        pdf.setLineWidth(0.6); // Thicker underline for better visibility
+        const underlineY = y + 1.5; // Position underline below baseline
+        pdf.line(x, underlineY, x + width, underlineY);
       } else {
         pdf.text(segment.text, x, y);
       }
@@ -496,7 +577,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
       if (segment.code) {
         pdf.setFont('courier', 'normal');
         pdf.setFontSize(fontSize * 0.9);
-        pdf.setTextColor(80, 80, 80);
+        pdf.setTextColor(110, 110, 110);
         
         // Draw background for inline code
         const width = pdf.getTextWidth(segment.text);
@@ -504,7 +585,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
         pdf.rect(x - 0.5, y - fontSize * 0.25, width + 1, fontSize * 0.35, 'F');
       } else {
         pdf.setFontSize(fontSize);
-        pdf.setTextColor(80, 80, 80); // Consistent darker gray color
+        pdf.setTextColor(110, 110, 110); // Lighter gray for quote text
         
         if (segment.bold && segment.italic) {
           pdf.setFont('helvetica', 'bolditalic');
@@ -531,13 +612,16 @@ export async function exportToPDF(title: string, content: string, filename?: str
   };
 
   // Add title
-  addText(title || 'Untitled', 24, 'bold', [0, 0, 0], 0, 4);
+  addText(title || 'Untitled', 24, 'bold', [0, 0, 0], 0, 0);
+
+  // Reduce space before the line
+  currentY -= 6;
 
   // Add a subtle line under the title
-  pdf.setDrawColor(200, 200, 200);
-  pdf.setLineWidth(0.5);
+  pdf.setDrawColor(230, 230, 230);
+  pdf.setLineWidth(0.3);
   pdf.line(config.marginLeft, currentY, config.pageWidth - config.marginRight, currentY);
-  currentY += 8;
+  currentY += 10; // Minimal space after line
 
   // Helper function to render images
   const renderImage = async (url: string, alt: string): Promise<void> => {
@@ -581,8 +665,49 @@ export async function exportToPDF(title: string, content: string, filename?: str
     }
   };
 
+  // Preprocess content to merge URLs on separate lines into surrounding text
+  // This prevents URLs from appearing on separate lines
+  const preprocessContent = (text: string): string => {
+    if (!text) return text;
+    
+    let result = text;
+    
+    // Replace: text + newline(s) + URL with: text + space + URL
+    result = result.replace(/([^\n])\n+(?=https?:\/\/)/g, '$1 ');
+    
+    // Replace: URL + newline(s) + text with: URL + space + text
+    result = result.replace(/(https?:\/\/[^\s]+)\n+([^\n])/g, '$1 $2');
+    
+    // Handle URL-only lines
+    const lines = result.split('\n');
+    const processed: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const isOnlyUrl = /^https?:\/\/[^\s]+$/.test(line);
+      
+      if (isOnlyUrl && processed.length > 0) {
+        // Append URL to previous line with a space
+        processed[processed.length - 1] += ' ' + line;
+      } else if (isOnlyUrl && i < lines.length - 1) {
+        // Prepend URL to next line with a space
+        const nextLine = lines[i + 1].trim();
+        if (nextLine) {
+          lines[i + 1] = line + ' ' + nextLine;
+        } else {
+          processed.push(line);
+        }
+      } else {
+        processed.push(lines[i]);
+      }
+    }
+    
+    return processed.join('\n');
+  };
+
   // Parse and render markdown content
-  const lines = content.split('\n');
+  const preprocessedContent = preprocessContent(content);
+  const lines = preprocessedContent.split('\n');
   let inCodeBlock = false;
   let codeBlockContent: string[] = [];
   let inList = false;
@@ -690,11 +815,17 @@ export async function exportToPDF(title: string, content: string, filename?: str
       const quoteText = line.substring(2).trim();
       const segments = parseInlineMarkdown(quoteText);
       
-      const startY = currentY; // Track where text starts
       const borderWidth = 0.5; // Very thin line
       const borderX = config.marginLeft + 4; // Border position
       const textX = config.marginLeft + 10; // Text starts with spacing from border
       const quoteIndent = 10;
+      
+      // Position border first, then text slightly below it
+      // In jsPDF, Y coordinate is the baseline, so we need to account for that
+      // The top of the text appears above the baseline, so we need enough offset
+      const borderStartY = currentY; // Border starts here
+      const startY = currentY + 3.5; // Text baseline starts below the border (ensures visual top of text is below border)
+      currentY = startY; // Update currentY to start rendering text from this position
       
       // Render formatted text with italic base style
       const lineHeightMM = 11 * 0.35277778 * config.lineHeight;
@@ -702,7 +833,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
       let currentLineWidth = 0;
       
       pdf.setFontSize(11);
-      pdf.setTextColor(80, 80, 80); // Darker gray for better readability
+      pdf.setTextColor(110, 110, 110); // Lighter gray for quote text
       
       for (let j = 0; j < segments.length; j++) {
         const segment = segments[j];
@@ -785,7 +916,6 @@ export async function exportToPDF(title: string, content: string, filename?: str
       }
       
       // Draw left border - exactly matching text height
-      const borderStartY = startY - 2.5; // Top of first text line
       const borderEndY = currentY - lineHeightMM + 2; // Bottom of last text line
       
       pdf.setDrawColor(200, 200, 200); // Subtle gray border
@@ -1175,7 +1305,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
         );
         
         if (rows.length > 0) {
-          currentY += 2; // Space before table
+          currentY += 4; // Space before table
           checkPageBreak(15);
           
           const numCols = Math.max(...rows.map(r => r.length));
@@ -1192,36 +1322,28 @@ export async function exportToPDF(title: string, content: string, filename?: str
             }
             
             const isHeader = r === 0;
-            const rowHeight = 7;
+            const rowHeight = 8; // Slightly taller rows for better readability
             
             checkPageBreak(rowHeight + 2);
             
-            // Draw row background
-            if (isHeader) {
-              pdf.setFillColor(248, 248, 248);
-              pdf.rect(config.marginLeft, currentY - 4.5, contentWidth, rowHeight, 'F');
-            } else if (r % 2 === 0) {
-              // Alternating row colors
-              pdf.setFillColor(252, 252, 252);
-              pdf.rect(config.marginLeft, currentY - 4.5, contentWidth, rowHeight, 'F');
-            }
-            
-            // Draw cells
+            // Draw cells (no background colors)
             for (let c = 0; c < numCols; c++) {
               const cellX = config.marginLeft + (c * colWidth);
               const cellText = row[c] || '';
               
-              // Set font
+              // Set font and styling
               if (isHeader) {
                 pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(30, 30, 30);
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(10);
               } else {
                 pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(60, 60, 60);
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(9.5);
               }
               
               // Truncate text if too long
-              const maxWidth = colWidth - 6;
+              const maxWidth = colWidth - 8; // More padding
               let displayText = cellText;
               if (pdf.getTextWidth(cellText) > maxWidth) {
                 while (pdf.getTextWidth(displayText + '...') > maxWidth && displayText.length > 0) {
@@ -1230,18 +1352,23 @@ export async function exportToPDF(title: string, content: string, filename?: str
                 displayText += '...';
               }
               
-              pdf.text(displayText, cellX + 3, currentY);
+              pdf.text(displayText, cellX + 4, currentY);
               
-              // Draw cell borders
-              pdf.setDrawColor(220, 220, 220);
-              pdf.setLineWidth(0.3);
-              pdf.rect(cellX, currentY - 4.5, colWidth, rowHeight);
+              // Draw cell borders - lighter borders throughout
+              pdf.setDrawColor(230, 230, 230); // Very light gray
+              pdf.setLineWidth(0.2);
+              pdf.rect(cellX, currentY - 5, colWidth, rowHeight);
             }
+            
+            // Draw outer border for the entire table
+            pdf.setDrawColor(220, 220, 220); // Light gray
+            pdf.setLineWidth(0.3);
+            pdf.rect(config.marginLeft, currentY - 5, contentWidth, rowHeight, 'S');
             
             currentY += rowHeight;
           }
           
-          currentY += 5;
+          currentY += 6;
           continue;
         }
       }
