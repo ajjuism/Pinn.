@@ -9,6 +9,7 @@ import { FileText, Folder, X, AlertCircle } from 'lucide-react';
 import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess, hasValidDirectoryAccess, restoreDirectoryAccess, getFolderPath } from './lib/fileSystemStorage';
 import { initStorage, refreshStorage } from './lib/storage';
 import { initFlowStorage, refreshFlowStorage } from './lib/flowStorage';
+import { initializeTheme, applyTheme } from './lib/themeStorage';
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'editor' | 'flows' | 'flow' | 'notes'>('home');
@@ -38,6 +39,11 @@ function App() {
     const initialize = async () => {
       try {
         console.log('App initialization started');
+        
+        // Initialize and apply theme first
+        const theme = await initializeTheme();
+        applyTheme(theme);
+        console.log('Theme initialized:', theme);
         
         // Check if folder is configured FIRST (before trying to restore handle)
         // This ensures we don't show onboarding if folder was previously configured
@@ -181,8 +187,8 @@ function App() {
   // Show loading state while initializing
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-[#2c3440] flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-theme-bg-primary flex items-center justify-center">
+        <div className="text-theme-text-secondary">Loading...</div>
       </div>
     );
   }
@@ -190,20 +196,20 @@ function App() {
   // Mobile Warning Overlay - blocks all access on mobile
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-[#2c3440] flex items-center justify-center px-4 py-8">
-        <div className="bg-[#2c3440] rounded-xl shadow-2xl max-w-sm w-full p-6 sm:p-8 border border-gray-700/80 text-center">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#6366F1]/10 flex items-center justify-center mx-auto mb-5 sm:mb-6 border border-[#6366F1]/20">
-            <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-[#6366F1]" />
+      <div className="min-h-screen bg-theme-bg-primary flex items-center justify-center px-4 py-8">
+        <div className="bg-theme-bg-primary rounded-xl shadow-2xl max-w-sm w-full p-6 sm:p-8 border border-theme-border text-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-theme-accent/10 flex items-center justify-center mx-auto mb-5 sm:mb-6 border border-theme-accent/20">
+            <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-theme-accent" />
           </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-200 mb-3 sm:mb-4 leading-tight">
+          <h2 className="text-lg sm:text-xl font-semibold text-theme-text-primary mb-3 sm:mb-4 leading-tight">
             Desktop Experience Required
           </h2>
-          <p className="text-sm sm:text-base text-gray-400 mb-4 sm:mb-6 leading-relaxed px-1">
+          <p className="text-sm sm:text-base text-theme-text-secondary mb-4 sm:mb-6 leading-relaxed px-1">
             This application is optimized for desktop use. Please access it from a desktop or laptop for the best experience.
           </p>
-          <div className="space-y-2 sm:space-y-2.5 pt-3 border-t border-gray-700/50">
+          <div className="space-y-2 sm:space-y-2.5 pt-3 border-t border-theme-border-light">
             <div className="flex items-start gap-2 text-left">
-              <span className="text-[#6366F1] mt-0.5 flex-shrink-0">•</span>
+              <span className="text-theme-accent mt-0.5 flex-shrink-0">•</span>
               <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
                 Keyboard shortcuts for navigation
               </p>
@@ -229,24 +235,24 @@ function App() {
   const folderPath = getFolderPath();
 
   return (
-    <div className="min-h-screen bg-[#2c3440] text-gray-300">
+    <div className="min-h-screen bg-theme-bg-primary text-theme-text-secondary">
       {showOnboarding ? (
         <OnboardingDialog onComplete={handleOnboardingComplete} />
       ) : (
         <>
           {/* Permission Restore Banner */}
           {needsPermissionRestore && (
-            <div className="fixed top-0 left-0 right-0 z-50 bg-[#6366F1]/10 border-b border-[#6366F1]/30 backdrop-blur-sm">
+            <div className="fixed top-0 left-0 right-0 z-50 bg-theme-accent/10 border-b border-theme-accent/30 backdrop-blur-sm">
               <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0 w-10 h-10 bg-[#6366F1]/20 rounded-lg flex items-center justify-center">
-                    <Folder className="w-5 h-5 text-[#6366F1]" />
+                  <div className="flex-shrink-0 w-10 h-10 bg-theme-accent/20 rounded-lg flex items-center justify-center">
+                    <Folder className="w-5 h-5 text-theme-accent" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-200">
+                    <p className="text-sm font-medium text-theme-text-primary">
                       Folder access needs to be restored
                     </p>
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs text-theme-text-secondary truncate">
                       {folderPath ? `Your folder "${folderPath}" is configured. Click to restore access (you may need to select the same folder again).` : 'Your folder is configured. Click to restore access (you may need to select the same folder again).'}
                     </p>
                   </div>
@@ -255,7 +261,7 @@ function App() {
                   <button
                     onClick={handleRestorePermission}
                     disabled={isRestoringPermission}
-                    className="px-4 py-2 text-sm font-medium bg-[#6366F1] hover:bg-[#5b5bf5] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6366F1] flex items-center gap-2"
+                    className="px-4 py-2 text-sm font-medium bg-theme-accent hover:bg-theme-accent-hover text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-accent flex items-center gap-2"
                   >
                     {isRestoringPermission ? (
                       <>
@@ -271,7 +277,7 @@ function App() {
                   </button>
                   <button
                     onClick={() => setNeedsPermissionRestore(false)}
-                    className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors flex-shrink-0"
+                    className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors flex-shrink-0"
                     title="Dismiss"
                   >
                     <X className="w-4 h-4" />

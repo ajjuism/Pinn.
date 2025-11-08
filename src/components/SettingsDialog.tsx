@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Key, Info, Folder, FolderOpen, AlertCircle, Database } from 'lucide-react';
+import { X, Key, Info, Folder, FolderOpen, AlertCircle, Database, Palette } from 'lucide-react';
 import { getGeminiApiKey, saveGeminiApiKey } from '../lib/geminiStorage';
 import { getFolderPath, requestDirectoryAccess, setDirectoryHandle, clearDirectoryHandle, isFileSystemSupported, isFolderConfigured, hasDirectoryAccess, restoreDirectoryAccess } from '../lib/fileSystemStorage';
 import { refreshStorage } from '../lib/storage';
 import { refreshFlowStorage } from '../lib/flowStorage';
+import { getTheme, saveTheme, applyTheme, Theme } from '../lib/themeStorage';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface SettingsDialogProps {
   onFolderChange?: () => void;
 }
 
-type SettingsCategory = 'storage' | 'api';
+type SettingsCategory = 'storage' | 'api' | 'appearance';
 
 export default function SettingsDialog({ isOpen, onClose, onFolderChange }: SettingsDialogProps) {
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('storage');
@@ -21,6 +22,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
   const [isChangingFolder, setIsChangingFolder] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
   const [isRestoringAccess, setIsRestoringAccess] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<Theme>('default');
 
   useEffect(() => {
     if (isOpen) {
@@ -28,6 +30,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
       setApiKey(storedKey || '');
       setFolderPath(getFolderPath());
       setFolderError(null);
+      setSelectedTheme(getTheme());
     }
   }, [isOpen]);
 
@@ -58,18 +61,22 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
       if (apiKey.trim()) {
         saveGeminiApiKey(apiKey.trim());
       }
+      // Save theme
+      await saveTheme(selectedTheme);
+      applyTheme(selectedTheme);
+      
       setTimeout(() => {
         setIsSaving(false);
         onClose();
       }, 200);
     } catch (error) {
-      console.error('Error saving API key:', error);
+      console.error('Error saving settings:', error);
       setIsSaving(false);
     }
   };
@@ -135,6 +142,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
 
   const categories = [
     { id: 'storage' as SettingsCategory, label: 'Storage', icon: Database, description: 'Manage data storage' },
+    { id: 'appearance' as SettingsCategory, label: 'Appearance', icon: Palette, description: 'Customize theme' },
     { id: 'api' as SettingsCategory, label: 'API Keys', icon: Key, description: 'Configure API settings' },
   ];
 
@@ -144,19 +152,19 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
       onClick={onClose}
     >
       <div 
-        className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] border border-gray-700 overflow-hidden flex flex-col"
+        className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] border border-theme-border overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-700 flex-shrink-0">
+        <div className="px-6 py-4 border-b border-theme-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-200">Settings</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Configure your application preferences</p>
+              <h2 className="text-xl font-semibold text-theme-text-primary">Settings</h2>
+              <p className="text-xs text-theme-text-secondary mt-0.5">Configure your application preferences</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+              className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -166,7 +174,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
         {/* Main Content Area */}
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar - Categories */}
-          <div className="w-56 border-r border-gray-700 bg-[#252b36] flex-shrink-0 flex flex-col">
+          <div className="w-56 border-r border-theme-border bg-theme-bg-darker flex-shrink-0 flex flex-col">
             <div className="px-3 py-4 space-y-1">
               {categories.map((category) => {
                 const Icon = category.icon;
@@ -177,11 +185,11 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                     onClick={() => setActiveCategory(category.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                       isActive
-                        ? 'bg-[#3a4450] text-gray-200 border border-gray-600'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#2c3440]'
+                        ? 'bg-theme-bg-secondary text-theme-text-primary border border-theme-border'
+                        : 'text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-primary'
                     }`}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                    <Icon className="w-5 h-5 flex-shrink-0 text-theme-text-secondary" />
                     <div className="flex flex-col items-start flex-1 min-w-0">
                       <span className="text-sm font-medium">{category.label}</span>
                       <span className="text-xs opacity-75 truncate w-full">{category.description}</span>
@@ -199,23 +207,23 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
               {activeCategory === 'storage' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-200 mb-1">
+                    <h3 className="text-lg font-semibold text-theme-text-primary mb-1">
                       Storage Folder
                     </h3>
-                    <p className="text-sm text-gray-400 mb-6">
+                    <p className="text-sm text-theme-text-secondary mb-6">
                       Choose where to store your notes, folders, and flows. Files can be accessed directly from your file system.
                     </p>
                     
                     {isFolderConfigured() && folderPath ? (
                       <div className="space-y-4">
-                        <div className="bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-4 flex items-center justify-between">
+                        <div className="bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-4 flex items-center justify-between">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-10 h-10 bg-[#3a4450] rounded-lg flex items-center justify-center flex-shrink-0">
-                              <FolderOpen className="w-5 h-5 text-gray-400" />
+                            <div className="w-10 h-10 bg-theme-bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FolderOpen className="w-5 h-5 text-theme-text-secondary" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs text-gray-400 mb-0.5">Current folder</p>
-                              <p className="text-sm text-gray-200 truncate font-medium" title={folderPath}>
+                              <p className="text-xs text-theme-text-secondary mb-0.5">Current folder</p>
+                              <p className="text-sm text-theme-text-primary truncate font-medium" title={folderPath}>
                                 {folderPath}
                               </p>
                               {!hasDirectoryAccess() && (
@@ -261,7 +269,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                           <button
                             onClick={handleChangeFolder}
                             disabled={isChangingFolder}
-                            className="px-4 py-2.5 text-sm font-medium bg-[#3a4450] hover:bg-[#424d5a] text-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="px-4 py-2.5 text-sm font-medium bg-theme-bg-secondary hover:bg-theme-bg-tertiary text-theme-text-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                           >
                             {isChangingFolder ? (
                               <>
@@ -291,11 +299,11 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                             </div>
                           </div>
                         )}
-                        <div className="flex items-start gap-3 p-4 bg-[#1f2833] border border-gray-700/50 rounded-lg">
-                          <Info className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                          <div className="text-sm text-gray-400 leading-relaxed">
-                            <p className="font-medium text-gray-300 mb-1">Local File Storage</p>
-                            <p className="text-xs text-gray-400">
+                        <div className="flex items-start gap-3 p-4 bg-theme-bg-darkest border border-theme-border-light rounded-lg">
+                          <Info className="w-5 h-5 text-theme-text-secondary mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-theme-text-secondary leading-relaxed">
+                            <p className="font-medium text-theme-text-primary mb-1">Local File Storage</p>
+                            <p className="text-xs text-theme-text-secondary">
                               All your notes, folders, and flows are stored in this folder as files. You can access, backup, and manage them directly from your file system.
                             </p>
                           </div>
@@ -303,14 +311,14 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-4 text-gray-400">
+                        <div className="bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-4 text-theme-text-secondary">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-700/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Folder className="w-5 h-5 text-gray-500" />
+                            <div className="w-10 h-10 bg-theme-border-light rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Folder className="w-5 h-5 text-theme-text-tertiary" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-300 mb-0.5">No folder selected</p>
-                              <p className="text-xs text-gray-400">Currently using browser storage (localStorage)</p>
+                              <p className="text-sm font-medium text-theme-text-primary mb-0.5">No folder selected</p>
+                              <p className="text-xs text-theme-text-secondary">Currently using browser storage (localStorage)</p>
                             </div>
                           </div>
                         </div>
@@ -318,7 +326,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                           <button
                             onClick={handleChangeFolder}
                             disabled={isChangingFolder}
-                            className="px-4 py-3 text-sm font-medium bg-[#3a4450] hover:bg-[#424d5a] text-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="px-4 py-3 text-sm font-medium bg-theme-bg-secondary hover:bg-theme-bg-tertiary text-theme-text-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                           >
                             {isChangingFolder ? (
                               <>
@@ -333,12 +341,12 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                             )}
                           </button>
                         ) : (
-                          <div className="bg-[#1f2833] border border-gray-700/50 rounded-lg p-4">
+                          <div className="bg-theme-bg-darkest border border-theme-border-light rounded-lg p-4">
                             <div className="flex items-start gap-3">
-                              <AlertCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                              <AlertCircle className="w-5 h-5 text-theme-text-secondary flex-shrink-0 mt-0.5" />
                               <div>
-                                <p className="text-sm font-medium text-gray-300 mb-1">Browser Not Supported</p>
-                                <p className="text-xs text-gray-400">
+                                <p className="text-sm font-medium text-theme-text-primary mb-1">Browser Not Supported</p>
+                                <p className="text-xs text-theme-text-secondary">
                                   File System Access API is not supported in this browser. Please use Chrome, Edge, or Opera for file system storage.
                                 </p>
                               </div>
@@ -351,20 +359,100 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                 </div>
               )}
 
+              {/* Appearance Category */}
+              {activeCategory === 'appearance' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-theme-text-primary mb-1">
+                      Theme
+                    </h3>
+                    <p className="text-sm text-theme-text-secondary mb-6">
+                      Choose your preferred color scheme. Your selection will be saved and remembered.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      {/* Default Theme */}
+                      <button
+                        onClick={() => setSelectedTheme('default')}
+                        className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
+                          selectedTheme === 'default'
+                            ? 'border-theme-accent bg-theme-accent/10'
+                            : 'border-theme-border bg-theme-bg-darkest hover:border-theme-border'
+                        }`}
+                      >
+                        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-700">
+                          <div className="h-full flex flex-col">
+                            <div className="h-1/3 bg-[#2c3440]"></div>
+                            <div className="h-1/3 bg-[#3a4450]"></div>
+                            <div className="h-1/3 bg-[#424d5a]"></div>
+                          </div>
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <p className="text-base font-medium text-theme-text-primary">Default</p>
+                            {selectedTheme === 'default' && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-theme-accent text-white rounded">Active</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-theme-text-secondary mt-0.5">The original Pinn theme with balanced colors</p>
+                        </div>
+                      </button>
+
+                      {/* Darker Theme */}
+                      <button
+                        onClick={() => setSelectedTheme('darker')}
+                        className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
+                          selectedTheme === 'darker'
+                            ? 'border-theme-accent bg-theme-accent/10'
+                            : 'border-theme-border bg-theme-bg-darkest hover:border-theme-border'
+                        }`}
+                      >
+                        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-700">
+                          <div className="h-full flex flex-col">
+                            <div className="h-1/3 bg-[#0f1419]"></div>
+                            <div className="h-1/3 bg-[#1a1f26]"></div>
+                            <div className="h-1/3 bg-[#252930]"></div>
+                          </div>
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <p className="text-base font-medium text-theme-text-primary">Darker</p>
+                            {selectedTheme === 'darker' && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-theme-accent text-white rounded">Active</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-theme-text-secondary mt-0.5">A deeper, more immersive dark theme</p>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-theme-bg-darkest border border-theme-border-light rounded-lg mt-6">
+                      <Info className="w-5 h-5 text-theme-text-secondary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-theme-text-secondary leading-relaxed">
+                        <p className="font-medium text-theme-text-primary mb-1">Theme Persistence</p>
+                        <p className="text-xs text-theme-text-secondary">
+                          Your theme preference is saved locally and will persist across sessions. If you have a storage folder configured, the theme is also saved to a file.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* API Keys Category */}
               {activeCategory === 'api' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-200 mb-1">
+                    <h3 className="text-lg font-semibold text-theme-text-primary mb-1">
                       API Configuration
                     </h3>
-                    <p className="text-sm text-gray-400 mb-6">
+                    <p className="text-sm text-theme-text-secondary mb-6">
                       Manage your API keys and authentication settings. All keys are stored locally and never shared.
                     </p>
                     
                     <div className="space-y-4">
                       <div>
-                        <label className="flex text-sm font-medium text-gray-300 mb-2 items-center gap-2">
+                        <label className="flex text-sm font-medium text-theme-text-primary mb-2 items-center gap-2">
                           <Key className="w-4 h-4" />
                           Gemini API Key
                         </label>
@@ -373,7 +461,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                           value={apiKey}
                           onChange={(e) => setApiKey(e.target.value)}
                           placeholder="Enter your Gemini API key..."
-                          className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent transition-all font-mono text-sm"
+                          className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-theme-text-tertiary focus:outline-none focus:ring-2 focus:ring-theme-border focus:border-transparent transition-all font-mono text-sm"
                           autoFocus={activeCategory === 'api'}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -384,10 +472,10 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                         />
                       </div>
                       
-                      <div className="flex items-start gap-3 p-4 bg-[#1f2833] border border-gray-700/50 rounded-lg">
-                        <Info className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-gray-400 leading-relaxed">
-                          <p className="font-medium text-gray-300 mb-2">Security & Privacy</p>
+                      <div className="flex items-start gap-3 p-4 bg-theme-bg-darkest border border-theme-border-light rounded-lg">
+                        <Info className="w-5 h-5 text-theme-text-secondary mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-theme-text-secondary leading-relaxed">
+                          <p className="font-medium text-theme-text-primary mb-2">Security & Privacy</p>
                           <p className="text-xs mb-2">
                             Your API key is stored locally in your browser and never transmitted to any third-party servers except Google's Gemini API when making requests.
                           </p>
@@ -397,7 +485,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                               href="https://makersuite.google.com/app/apikey" 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="text-gray-300 hover:text-white hover:underline font-medium"
+                              className="text-theme-text-primary hover:text-white hover:underline font-medium"
                             >
                               Google AI Studio
                             </a>
@@ -414,17 +502,17 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
         </div>
 
         {/* Footer - Action Buttons */}
-        <div className="px-6 py-4 border-t border-gray-700 flex justify-end gap-3 flex-shrink-0 bg-[#252b36]">
+        <div className="px-6 py-4 border-t border-theme-border flex justify-end gap-3 flex-shrink-0 bg-theme-bg-darker">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 text-sm font-medium bg-[#6366F1] hover:bg-[#5b5bf5] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6366F1]"
+            className="px-5 py-2.5 text-sm font-medium bg-theme-accent hover:bg-theme-accent-hover text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-accent"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>

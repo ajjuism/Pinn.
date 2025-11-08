@@ -189,21 +189,21 @@ export default function AIPromptDialog({
       onClick={onClose}
     >
       <div 
-        className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 overflow-hidden"
+        className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-2xl border border-theme-border overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5 border-b border-gray-700">
+        <div className="px-6 py-5 border-b border-theme-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#6366F1]/20 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-[#6366F1]" />
+              <div className="w-10 h-10 bg-theme-accent/20 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-theme-accent" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-200">AI Assistant</h2>
+              <h2 className="text-xl font-semibold text-theme-text-primary">AI Assistant</h2>
             </div>
             <button
               onClick={onClose}
               disabled={isGenerating}
-              className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors disabled:opacity-50"
+              className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors disabled:opacity-50"
             >
               <X className="w-5 h-5" />
             </button>
@@ -212,9 +212,9 @@ export default function AIPromptDialog({
 
         <div className="px-6 py-6 space-y-4">
           {hasSelection && selectedText && (
-            <div className="bg-[#1f2833] border border-gray-700 rounded-lg p-4">
-              <div className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Selected Text</div>
-              <div className="text-sm text-gray-300 bg-[#2c3440] rounded p-3 max-h-32 overflow-y-auto font-mono">
+            <div className="bg-theme-bg-darkest border border-theme-border rounded-lg p-4">
+              <div className="text-xs font-medium text-theme-text-secondary mb-2 uppercase tracking-wide">Selected Text</div>
+              <div className="text-sm text-theme-text-primary bg-theme-bg-primary rounded p-3 max-h-32 overflow-y-auto font-mono">
                 {selectedText.length > 200 ? `${selectedText.substring(0, 200)}...` : selectedText}
               </div>
               <div className="text-xs text-gray-500 mt-2">The AI will analyze and replace this selection.</div>
@@ -222,7 +222,7 @@ export default function AIPromptDialog({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
+            <label className="block text-sm font-medium text-theme-text-primary mb-3">
               {hasSelection ? 'What would you like the AI to do with the selected text?' : 'What would you like to generate?'}
             </label>
             <textarea
@@ -230,7 +230,7 @@ export default function AIPromptDialog({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder={hasSelection ? "e.g., Improve this section, rewrite it more clearly, expand on this idea..." : "e.g., Write a blog post about React hooks, Create a summary of best practices..."}
-              className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all resize-none"
+              className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all resize-none"
               rows={6}
               disabled={isGenerating}
               onKeyDown={(e) => {
@@ -251,7 +251,7 @@ export default function AIPromptDialog({
                     onClose();
                     onOpenSettings();
                   }}
-                  className="mt-2 text-xs text-[#6366F1] hover:underline"
+                  className="mt-2 text-xs text-theme-accent hover:underline"
                 >
                   Open Settings →
                 </button>
@@ -259,18 +259,18 @@ export default function AIPromptDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-theme-border">
             <button
               onClick={onClose}
               disabled={isGenerating}
-              className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !prompt.trim()}
-              className="px-5 py-2.5 text-sm font-medium bg-[#6366F1] hover:bg-[#5b5bf5] text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6366F1] shadow-lg hover:shadow-xl flex items-center gap-2"
+              className="px-5 py-2.5 text-sm font-medium bg-theme-accent hover:bg-theme-accent-hover text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-accent shadow-lg hover:shadow-xl flex items-center gap-2"
             >
               {isGenerating ? (
                 <>
@@ -287,7 +287,7 @@ export default function AIPromptDialog({
           </div>
 
           <div className="text-xs text-gray-500 text-center">
-            Press <kbd className="px-2 py-1 bg-[#1f2833] border border-gray-700 rounded">⌘</kbd> + <kbd className="px-2 py-1 bg-[#1f2833] border border-gray-700 rounded">Enter</kbd> to generate
+            Press <kbd className="px-2 py-1 bg-theme-bg-darkest border border-theme-border rounded">⌘</kbd> + <kbd className="px-2 py-1 bg-theme-bg-darkest border border-theme-border rounded">Enter</kbd> to generate
           </div>
         </div>
       </div>

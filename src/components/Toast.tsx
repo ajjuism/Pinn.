@@ -29,15 +29,15 @@ export default function Toast({ isOpen, onClose, message, type = 'success', dura
 
   return (
     <div className="fixed top-4 right-4 z-[100] animate-slide-in">
-      <div className={`bg-[#2c3440] border ${borderColor} rounded-lg shadow-2xl min-w-[300px] max-w-[500px] overflow-hidden`}>
+      <div className={`bg-theme-bg-primary border ${borderColor} rounded-lg shadow-2xl min-w-[300px] max-w-[500px] overflow-hidden`}>
         <div className="px-4 py-3 flex items-center gap-3">
           <div className={`${iconBgColor} rounded-lg p-2 flex-shrink-0`}>
             <Icon className={`w-5 h-5 ${iconColor}`} />
           </div>
-          <p className="flex-1 text-gray-200 text-sm">{message}</p>
+          <p className="flex-1 text-theme-text-primary text-sm">{message}</p>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded p-1 transition-colors flex-shrink-0"
+            className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded p-1 transition-colors flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>

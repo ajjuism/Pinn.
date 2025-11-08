@@ -2,43 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+:root[data-theme="default"] {
+  --color-bg-primary: #2c3440;
+  --color-bg-secondary: #3a4450;
+  --color-bg-tertiary: #424d5a;
+  --color-bg-darker: #252b36;
+  --color-bg-darkest: #1f2833;
+  --color-border: #4a5560;
+  --color-border-light: rgba(74, 85, 96, 0.5);
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+  --color-text-tertiary: #6b7280;
+  --color-accent: #6366F1;
+  --color-accent-hover: #5b5bf5;
+}
+
+:root[data-theme="darker"] {
+  --color-bg-primary: #0f1419;
+  --color-bg-secondary: #1a1f26;
+  --color-bg-tertiary: #252930;
+  --color-bg-darker: #0a0e13;
+  --color-bg-darkest: #050709;
+  --color-border: #2d3339;
+  --color-border-light: rgba(45, 51, 57, 0.5);
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+  --color-text-tertiary: #6b7280;
+  --color-accent: #6366F1;
+  --color-accent-hover: #5b5bf5;
+}
+
 /* React Flow dark theme styling */
 .react-flow__controls {
-  background: #3a4450 !important;
-  border: 1px solid #4a5560 !important;
+  background: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
   border-radius: 8px !important;
 }
 
 .react-flow__controls-button {
-  background: #3a4450 !important;
-  border-bottom: 1px solid #4a5560 !important;
-  color: #9ca3af !important;
-  fill: #9ca3af !important;
+  background: var(--color-bg-secondary) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+  fill: var(--color-text-secondary) !important;
 }
 
 .react-flow__controls-button:hover {
-  background: #2c3440 !important;
+  background: var(--color-bg-primary) !important;
   color: #ffffff !important;
   fill: #ffffff !important;
 }
 
 .react-flow__controls-button:active {
-  background: #2c3440 !important;
+  background: var(--color-bg-primary) !important;
 }
 
 .react-flow__minimap {
-  background: #3a4450 !important;
-  border: 1px solid #4a5560 !important;
+  background: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
   border-radius: 8px !important;
 }
 
 .react-flow__minimap-mask {
-  fill: rgba(44, 52, 64, 0.6) !important;
+  fill: var(--color-bg-primary) !important;
+  opacity: 0.6;
 }
 
 .react-flow__minimap-node {
   fill: #e8935f !important;
-  stroke: #3a4450 !important;
+  stroke: var(--color-bg-secondary) !important;
 }
 
 /* Hide scrollbar utility */

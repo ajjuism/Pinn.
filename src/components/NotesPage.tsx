@@ -533,30 +533,30 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
   const sortedFolders = Array.from(folderSet).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="h-screen bg-[#2c3440] flex flex-col overflow-hidden">
-      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
+    <div className="h-screen bg-theme-bg-primary flex flex-col overflow-hidden">
+      <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={onNavigateToHome}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
             title="Back to Home"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </button>
-          <h1 className="text-xl font-light text-gray-300">Notes</h1>
+          <h1 className="text-xl font-light text-theme-text-primary">Notes</h1>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={handleNewNote}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>New Note</span>
           </button>
           <button
             onClick={onNavigateToFlows}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
             <span>Flow</span>
@@ -564,17 +564,17 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <MenuIcon className="w-5 h-5" />
               <span>Menu</span>
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
                     onClick={handleImportNotes}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Upload className="w-4 h-4" />
                     <span>Import Notes</span>
@@ -582,14 +582,14 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   <div className="border-t border-gray-600 my-1" />
                   <button
                     onClick={handleExportAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (JSON)</span>
                   </button>
                   <button
                     onClick={handleExportAllMarkdown}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (Markdown)</span>
@@ -597,7 +597,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   <div className="border-t border-gray-600 my-1" />
                   <button
                     onClick={handleClearAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-[#2c3440] hover:text-red-300 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-theme-bg-primary hover:text-red-300 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Notes</span>
@@ -608,7 +608,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                       setShowSettingsDialog(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Settings className="w-4 h-4" />
                     <span>Settings</span>
@@ -623,10 +623,10 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Sidebar */}
         <aside 
-          className="bg-[#2c3440] border-r border-gray-700 w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
+          className="bg-theme-bg-primary border-r border-theme-border w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
         >
           {/* Fixed Header Section */}
-          <div className="flex-shrink-0 p-4 space-y-2 bg-[#2c3440]">
+          <div className="flex-shrink-0 p-4 space-y-2 bg-theme-bg-primary">
             {/* Search in sidebar */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -635,7 +635,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                 placeholder="Search notes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#3a4450] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
+                className="w-full bg-theme-bg-secondary border border-theme-border rounded-lg pl-9 pr-3 py-2 text-sm text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
               />
             </div>
 
@@ -645,8 +645,8 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                 onClick={() => handleFolderClick('All')}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                   selectedFolder === 'All'
-                    ? 'bg-[#3a4450] text-gray-200'
-                    : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                    ? 'bg-theme-bg-secondary text-theme-text-primary'
+                    : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                 }`}
               >
                 <Book className="w-4 h-4" />
@@ -662,8 +662,8 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   onClick={() => handleFolderClick('Unfiled')}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedFolder === 'Unfiled'
-                      ? 'bg-[#3a4450] text-white'
-                      : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                      ? 'bg-theme-bg-secondary text-white'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                   }`}
                 >
                   <Book className="w-4 h-4" />
@@ -678,7 +678,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Folders</span>
               <button
                 onClick={handleCreateFolder}
-                className="text-xs text-gray-500 hover:text-gray-300 p-1"
+                className="text-xs text-gray-500 hover:text-theme-text-primary p-1"
                 title="New Folder"
               >
                 <Plus className="w-3 h-3" />
@@ -700,7 +700,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   <span>No folders yet</span>
                   <button
                     onClick={handleCreateFolder}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-[#3a4450]"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-theme-border text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary"
                   >
                     <Plus className="w-3 h-3" />
                     <span>New folder</span>
@@ -723,7 +723,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleFolder(folderName)}
-                          className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                          className="p-1 text-gray-500 hover:text-theme-text-primary transition-colors"
                           title={isExpanded ? 'Collapse' : 'Expand'}
                         >
                           {isExpanded ? (
@@ -737,8 +737,8 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                             onClick={() => handleFolderClick(folderName)}
                             className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-colors min-w-0 ${
                               selectedFolder === folderName
-                                ? 'bg-[#3a4450] text-white'
-                                : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                                ? 'bg-theme-bg-secondary text-white'
+                                : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                             }`}
                           >
                           {isExpanded ? (
@@ -754,7 +754,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                             <button
                               title="Rename folder"
                               onClick={() => handleRenameFolder(folderName)}
-                              className="p-1 text-gray-500 hover:text-gray-300 rounded"
+                              className="p-1 text-gray-500 hover:text-theme-text-primary rounded"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -771,7 +771,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                       {isExpanded && filteredFolderNotes.length > 0 && (
                         <div className="ml-7 mt-1 space-y-0.5">
                           {filteredFolderNotes.map((note) => (
-                            <div key={note.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-gray-400 hover:bg-[#3a4450] hover:text-gray-200 transition-colors truncate min-w-0">
+                            <div key={note.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0">
                               <Book className="w-3 h-3 flex-shrink-0" />
                               <button
                                 onClick={() => onNavigateToEditor(note.id)}
@@ -783,7 +783,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                               <button
                                 title="Edit note"
                                 onClick={() => onNavigateToEditor(note.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-gray-300 rounded"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-theme-text-primary rounded"
                               >
                                 <Edit2 className="w-3 h-3" />
                               </button>
@@ -814,7 +814,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
         {/* Main Content */}
         <main className="flex-1 h-full flex flex-col">
           {/* Fixed Header Section */}
-          <div className="flex-shrink-0 bg-[#2c3440] border-b border-gray-700">
+          <div className="flex-shrink-0 bg-theme-bg-primary border-b border-theme-border">
             <div className="max-w-5xl mx-auto px-6 py-6">
               {!loading && (
                 <div className="flex items-center justify-between">
@@ -824,7 +824,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   {filteredNotes.length > 0 && (
                     <button
                       onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
-                      className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                      className="text-sm text-gray-500 hover:text-theme-text-secondary transition-colors"
                     >
                       Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
                     </button>
@@ -850,12 +850,12 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                   {filteredNotes.map((note) => (
                     <div
                       key={note.id}
-                      className="group relative bg-[#3a4450] rounded-lg p-4 hover:bg-[#424d5a] transition-colors cursor-pointer"
+                      className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
                       onClick={() => onNavigateToEditor(note.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="text-lg text-gray-300 group-hover:text-white transition-colors mb-2">
+                          <h4 className="text-lg text-theme-text-primary group-hover:text-white transition-colors mb-2">
                             {note.title}
                           </h4>
                           <p className="text-sm text-gray-500 mb-3 line-clamp-2">
@@ -865,7 +865,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                             <span>{formatDate(note.updated_at)}</span>
                             <span>{note.content.length} characters</span>
                             {selectedFolder === 'All' && (
-                              <span className="px-2 py-0.5 rounded bg-[#2c3440] border border-gray-700 text-gray-400">
+                              <span className="px-2 py-0.5 rounded bg-theme-bg-primary border border-theme-border text-theme-text-secondary">
                                 {note.folder && note.folder.trim() ? note.folder : 'Unfiled'}
                               </span>
                             )}
@@ -877,7 +877,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                             value={note.folder && note.folder.trim() ? note.folder : 'Unfiled'}
                             onChange={(e) => handleAssignFolder(note.id, e.target.value)}
                             title={note.folder || 'Unfiled'}
-                            className="text-sm bg-[#2c3440] border border-gray-700 rounded px-2 py-1 text-gray-300 max-w-[200px]"
+                            className="text-sm bg-theme-bg-primary border border-theme-border rounded px-2 py-1 text-theme-text-primary max-w-[200px]"
                           >
                             <option value="Unfiled">Unfiled</option>
                             {folders.filter((f) => f !== 'All' && f !== 'Unfiled').map((f) => (
@@ -887,7 +887,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                           </select>
                           <button
                             onClick={(e) => handleDeleteNote(note.id, e)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-[#2c3440] rounded transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-theme-bg-primary rounded transition-all"
                             title="Delete note"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -954,10 +954,10 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
 
       {showFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">{folderToRename ? 'Rename Folder' : 'New Folder'}</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">{folderToRename ? 'Rename Folder' : 'New Folder'}</h2>
                 <button
                   onClick={() => {
                     setShowFolderDialog(false);
@@ -965,7 +965,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                     setNewFolderName('');
                     setFolderToRename(null);
                   }}
-                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                  className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
                 >
                   ✕
                 </button>
@@ -974,18 +974,18 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
 
             <div className="px-6 py-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Folder name</label>
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">Folder name</label>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Enter folder name..."
-                  className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
+                  className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+              <div className="flex justify-end gap-3 pt-2 border-t border-theme-border">
                 <button
                   onClick={() => {
                     setShowFolderDialog(false);
@@ -993,7 +993,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                     setNewFolderName('');
                     setFolderToRename(null);
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -1012,16 +1012,16 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
 
       {showFolderDeleteDialog && folderToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">Delete Folder</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">Delete Folder</h2>
                 <button
                   onClick={() => {
                     setShowFolderDeleteDialog(false);
                     setFolderToDelete(null);
                   }}
-                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                  className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
                 >
                   ✕
                 </button>
@@ -1030,15 +1030,15 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
             <div className="px-6 py-6 space-y-6">
               {folderDeleteCount > 0 ? (
                 <>
-                  <div className="text-gray-300">
+                  <div className="text-theme-text-primary">
                     <div className="mb-2">The folder</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={folderToDelete}>{folderToDelete}</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={folderToDelete}>{folderToDelete}</div>
                     <div className="mt-3">contains notes. What would you like to do?</div>
                   </div>
                   <div className="flex flex-col gap-3">
                     <button
                       onClick={() => confirmDeleteFolder('move-to-unfiled')}
-                      className="px-5 py-2.5 text-sm font-medium bg-[#3a4450] hover:bg-[#424d5a] text-gray-100 rounded-lg transition-all text-left"
+                      className="px-5 py-2.5 text-sm font-medium bg-theme-bg-secondary hover:bg-theme-bg-tertiary text-gray-100 rounded-lg transition-all text-left"
                     >
                       Move notes to Unfiled and delete folder
                     </button>
@@ -1052,9 +1052,9 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                 </>
               ) : (
                 <>
-                  <div className="text-gray-300">
+                  <div className="text-theme-text-primary">
                     <div className="mb-2">Delete empty folder</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={folderToDelete}>{folderToDelete}</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={folderToDelete}>{folderToDelete}</div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <button
@@ -1063,7 +1063,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                         setFolderToDelete(null);
                         setFolderDeleteCount(0);
                       }}
-                      className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                      className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                     >
                       Cancel
                     </button>

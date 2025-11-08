@@ -75,7 +75,7 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
                   <div className="absolute top-3 right-3 z-10">
                     <button
                       onClick={() => handleCopyCode(codeString, codeIndex)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#2c3440]/90 hover:bg-[#2c3440] backdrop-blur-sm border border-gray-600/50 rounded-md text-gray-400 hover:text-gray-200 transition-all text-xs"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-theme-bg-primary/90 hover:bg-theme-bg-primary backdrop-blur-sm border border-gray-600/50 rounded-md text-theme-text-secondary hover:text-theme-text-primary transition-all text-xs"
                       title="Copy code"
                     >
                       {copiedCodeBlocks.has(codeIndex) ? (

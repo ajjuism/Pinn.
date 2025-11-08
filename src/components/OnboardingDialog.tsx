@@ -71,20 +71,20 @@ export default function OnboardingDialog({ onComplete }: OnboardingDialogProps) 
   if (!isFileSystemSupported()) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700 overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-700">
+        <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-2xl border border-theme-border overflow-hidden">
+          <div className="px-6 py-5 border-b border-theme-border">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
                 <AlertCircle className="w-6 h-6 text-red-500" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-200">Browser Not Supported</h2>
+              <h2 className="text-xl font-semibold text-theme-text-primary">Browser Not Supported</h2>
             </div>
           </div>
           <div className="px-6 py-6">
-            <p className="text-gray-300 mb-4">
+            <p className="text-theme-text-primary mb-4">
               The File System Access API is required for this feature. Please use one of the following browsers:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-400 mb-6">
+            <ul className="list-disc list-inside space-y-2 text-theme-text-secondary mb-6">
               <li>Google Chrome (recommended)</li>
               <li>Microsoft Edge</li>
               <li>Opera</li>
@@ -100,50 +100,50 @@ export default function OnboardingDialog({ onComplete }: OnboardingDialogProps) 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-3xl border border-gray-700 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-700">
+      <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-3xl border border-theme-border overflow-hidden">
+        <div className="px-6 py-5 border-b border-theme-border">
           <div>
-            <span className="inline-flex items-center rounded-md bg-[#3a4450] border border-gray-700 px-2 py-0.5 text-[11px] text-gray-300 mb-2">Welcome to Pinn.</span>
-            <h2 className="text-xl font-semibold text-gray-200">Choose your workspace folder</h2>
-            <p className="text-sm text-gray-400 mt-1">All adds, edits, and deletes will happen inside this folder.</p>
+            <span className="inline-flex items-center rounded-md bg-theme-bg-secondary border border-theme-border px-2 py-0.5 text-[11px] text-theme-text-primary mb-2">Welcome to Pinn.</span>
+            <h2 className="text-xl font-semibold text-theme-text-primary">Choose your workspace folder</h2>
+            <p className="text-sm text-theme-text-secondary mt-1">All adds, edits, and deletes will happen inside this folder.</p>
           </div>
         </div>
 
         <div className="px-6 py-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-[#3a4450] border border-gray-700 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2 text-gray-300">
-                <HardDrive className="w-4 h-4 text-[#6366F1]" />
+            <div className="bg-theme-bg-secondary border border-theme-border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2 text-theme-text-primary">
+                <HardDrive className="w-4 h-4 text-theme-accent" />
                 <span className="text-sm font-medium">Local-first</span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">Notes and flows are saved as files in your folder. No cloud, fully offline.</p>
+              <p className="text-xs text-theme-text-secondary leading-relaxed">Notes and flows are saved as files in your folder. No cloud, fully offline.</p>
             </div>
-            <div className="bg-[#3a4450] border border-gray-700 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2 text-gray-300">
+            <div className="bg-theme-bg-secondary border border-theme-border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2 text-theme-text-primary">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <span className="text-sm font-medium">Private by design</span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">Data never leaves your device. You control the files and where they live.</p>
+              <p className="text-xs text-theme-text-secondary leading-relaxed">Data never leaves your device. You control the files and where they live.</p>
             </div>
-            <div className="bg-[#3a4450] border border-gray-700 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2 text-gray-300">
+            <div className="bg-theme-bg-secondary border border-theme-border rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2 text-theme-text-primary">
                 <Book className="w-4 h-4 text-[#e8935f]" />
                 <span className="text-sm font-medium">Simple files</span>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">We use readable JSON/Markdown. You can back up or version them easily.</p>
+              <p className="text-xs text-theme-text-secondary leading-relaxed">We use readable JSON/Markdown. You can back up or version them easily.</p>
             </div>
           </div>
 
-          <div className="bg-[#1f2833] border border-gray-700 rounded-lg p-4">
+          <div className="bg-theme-bg-darkest border border-theme-border rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-[#6366F1] flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-gray-300 leading-relaxed">
+              <Info className="w-5 h-5 text-theme-accent flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-theme-text-primary leading-relaxed">
                 <p className="mb-2">When you press Select Folder, your browser will show a permission dialog asking you to allow this site to edit files in the folder you pick.</p>
-                <div className="mt-3 rounded-lg border border-gray-700 bg-[#2c3440] px-3 py-2 text-xs text-gray-400">
+                <div className="mt-3 rounded-lg border border-theme-border bg-theme-bg-primary px-3 py-2 text-xs text-theme-text-secondary">
                   <div className="flex items-center">
                     <span className="opacity-80">Example prompt:</span>
-                    <div className="ml-2 inline-flex items-center gap-2 rounded-md bg-[#3a4450] px-3 py-1.5 border border-gray-700">
-                      <span className="text-gray-300">Allow this site to edit files?</span>
+                    <div className="ml-2 inline-flex items-center gap-2 rounded-md bg-theme-bg-secondary px-3 py-1.5 border border-theme-border">
+                      <span className="text-theme-text-primary">Allow this site to edit files?</span>
                       <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-sky-500/20 text-sky-300 px-2 py-0.5 text-[11px]">
                         <span>Allow</span>
                         <ArrowRight className="w-3 h-3" />
@@ -176,15 +176,15 @@ export default function OnboardingDialog({ onComplete }: OnboardingDialogProps) 
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-theme-border">
             <div className="text-xs text-gray-500">
-              Recommended location: <span className="text-gray-400">Documents/Pinn</span>
+              Recommended location: <span className="text-theme-text-secondary">Documents/Pinn</span>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleSelectFolder}
                 disabled={isSelecting || isMigrating}
-                className="px-5 py-2.5 text-sm font-medium bg-[#6366F1] hover:bg-[#5b5bf5] text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6366F1] shadow-lg hover:shadow-xl flex items-center gap-2"
+                className="px-5 py-2.5 text-sm font-medium bg-theme-accent hover:bg-theme-accent-hover text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-theme-accent shadow-lg hover:shadow-xl flex items-center gap-2"
               >
                 {isSelecting ? (
                   <>

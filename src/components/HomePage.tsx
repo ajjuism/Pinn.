@@ -324,32 +324,32 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   };
 
   return (
-    <div className="min-h-screen bg-[#2c3440]">
-      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700">
+    <div className="min-h-screen bg-theme-bg-primary">
+      <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#e8935f] rounded-lg flex items-center justify-center">
             <Bookmark className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-light text-gray-300">Pinn.</h1>
+          <h1 className="text-2xl font-light text-theme-text-primary">Pinn.</h1>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={handleNewNote}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>New Note</span>
           </button>
           <button
             onClick={onNavigateToNotes}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button
             onClick={onNavigateToFlows}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
             <span>Flow</span>
@@ -357,17 +357,17 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <MenuIcon className="w-5 h-5" />
               <span>Menu</span>
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
                     onClick={handleImportNotes}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Upload className="w-4 h-4" />
                     <span>Import Notes</span>
@@ -375,14 +375,14 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                   <div className="border-t border-gray-600 my-1" />
                   <button
                     onClick={handleExportAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (JSON)</span>
                   </button>
                   <button
                     onClick={handleExportAllMarkdown}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (Markdown)</span>
@@ -390,7 +390,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                   <div className="border-t border-gray-600 my-1" />
                   <button
                     onClick={handleClearAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-[#2c3440] hover:text-red-300 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-theme-bg-primary hover:text-red-300 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Notes</span>
@@ -401,7 +401,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                       setShowSettingsDialog(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Settings className="w-4 h-4" />
                     <span>Settings</span>
@@ -423,7 +423,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
               placeholder="Search notes and flows..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#3a4450] border border-gray-600 rounded-xl pl-14 pr-6 py-4 text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#e8935f]/50 focus:ring-2 focus:ring-[#e8935f]/20 transition-all shadow-lg"
+              className="w-full bg-theme-bg-secondary border border-gray-600 rounded-xl pl-14 pr-6 py-4 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-[#e8935f]/50 focus:ring-2 focus:ring-[#e8935f]/20 transition-all shadow-lg"
             />
           </div>
         </div>
@@ -438,20 +438,20 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-8 bg-gradient-to-b from-[#e8935f] to-transparent rounded-full"></div>
-                    <h3 className="text-sm uppercase tracking-wider text-gray-400 font-semibold">
+                    <h3 className="text-sm uppercase tracking-wider text-theme-text-secondary font-semibold">
                       Recently Created Flows
                     </h3>
                   </div>
                   <div className="flex items-center gap-3">
                   <button
                     onClick={() => setFlowSortBy(flowSortBy === 'title' ? 'date' : 'title')}
-                    className="text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-md hover:bg-[#3a4450]"
+                    className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                   >
                     Sort By: {flowSortBy === 'title' ? 'Title' : 'Date'}
                   </button>
                     <button
                       onClick={onNavigateToFlows}
-                      className="text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-md hover:bg-[#3a4450]"
+                      className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                     >
                       View All
                     </button>
@@ -462,19 +462,19 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                     <button
                       key={flow.id}
                       onClick={() => onNavigateToFlow(flow.id)}
-                      className="group relative bg-[#3a4450] hover:bg-[#424d5a] border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
+                      className="group relative bg-theme-bg-secondary hover:bg-theme-bg-tertiary border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-[#e8935f]/20 to-[#e8935f]/10 border border-[#e8935f]/30 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                           <GitBranch className="w-5 h-5 text-[#e8935f]" />
                         </div>
                         <div className="flex-1 min-w-0 text-left">
-                          <h4 className="text-base font-medium text-gray-200 group-hover:text-white transition-colors mb-1.5 truncate leading-tight">
+                          <h4 className="text-base font-medium text-theme-text-primary group-hover:text-white transition-colors mb-1.5 truncate leading-tight">
                             {flow.title}
                           </h4>
                           <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500">
                             <span className="whitespace-nowrap">{formatDate(flow.created_at)}</span>
-                            <span className="px-2 py-0.5 bg-[#2c3440] rounded-md border border-gray-600 text-gray-400 whitespace-nowrap">
+                            <span className="px-2 py-0.5 bg-theme-bg-primary rounded-md border border-gray-600 text-theme-text-secondary whitespace-nowrap">
                               {flow.nodes.length} node{flow.nodes.length !== 1 ? 's' : ''}
                             </span>
                           </div>
@@ -492,20 +492,20 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-transparent rounded-full"></div>
-                    <h3 className="text-sm uppercase tracking-wider text-gray-400 font-semibold">
+                    <h3 className="text-sm uppercase tracking-wider text-theme-text-secondary font-semibold">
                       Recently Modified Notes
                     </h3>
                   </div>
                   <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
-                    className="text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-md hover:bg-[#3a4450]"
+                    className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                   >
                     Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
                   </button>
                     <button
                       onClick={onNavigateToNotes}
-                      className="text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-md hover:bg-[#3a4450]"
+                      className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                     >
                       View All
                     </button>
@@ -516,14 +516,14 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                     <button
                       key={note.id}
                       onClick={() => onNavigateToEditor(note.id)}
-                      className="group relative bg-[#3a4450] hover:bg-[#424d5a] border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
+                      className="group relative bg-theme-bg-secondary hover:bg-theme-bg-tertiary border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                           <FileText className="w-5 h-5 text-blue-400" />
                         </div>
                         <div className="flex-1 min-w-0 text-left">
-                          <h4 className="text-base font-medium text-gray-200 group-hover:text-white transition-colors mb-1.5 line-clamp-2 leading-tight">
+                          <h4 className="text-base font-medium text-theme-text-primary group-hover:text-white transition-colors mb-1.5 line-clamp-2 leading-tight">
                             {note.title}
                           </h4>
                           <p className="text-xs text-gray-500 whitespace-nowrap">{formatDate(note.updated_at)}</p>
@@ -537,11 +537,11 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
               <div className="flex flex-col items-center justify-center py-24 px-4">
                 <div className="relative mb-8">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#e8935f]/10 to-transparent rounded-2xl blur-xl"></div>
-                  <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-[#3a4450] to-[#2c3440] border border-gray-700/50 flex items-center justify-center">
+                  <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-[#3a4450] to-[#2c3440] border border-theme-border/50 flex items-center justify-center">
                     <Sparkles className="w-12 h-12 text-[#e8935f] opacity-80" />
                   </div>
                 </div>
-                <h3 className="text-xl font-medium text-gray-200 mb-2 text-center">No notes yet</h3>
+                <h3 className="text-xl font-medium text-theme-text-primary mb-2 text-center">No notes yet</h3>
                 <p className="text-sm text-gray-500 max-w-md text-center">
                   Start capturing your thoughts and ideas. Create your first note to begin.
                 </p>
@@ -557,10 +557,10 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
 
             {searchQuery && filteredNotes.length === 0 && filteredFlows.length === 0 && (
               <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#3a4450] border border-gray-600 mb-4">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-theme-bg-secondary border border-gray-600 mb-4">
                   <Search className="w-10 h-10 text-gray-500" />
                 </div>
-                <p className="text-gray-400 mb-2">No notes or flows found</p>
+                <p className="text-theme-text-secondary mb-2">No notes or flows found</p>
                 <p className="text-sm text-gray-500">Try a different search term</p>
               </div>
             )}

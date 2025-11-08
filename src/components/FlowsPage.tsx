@@ -310,30 +310,30 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
   const sortedCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="h-screen bg-[#2c3440] flex flex-col overflow-hidden">
-      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
+    <div className="h-screen bg-theme-bg-primary flex flex-col overflow-hidden">
+      <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={onNavigateToHome}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
             title="Back to Home"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
           </button>
-          <h1 className="text-xl font-light text-gray-300">Flows</h1>
+          <h1 className="text-xl font-light text-theme-text-primary">Flows</h1>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={handleNewFlow}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>New Flow</span>
           </button>
           <button
             onClick={onNavigateToNotes}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
@@ -341,17 +341,17 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <MenuIcon className="w-5 h-5" />
               <span>Menu</span>
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
                     onClick={handleExportAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Flows</span>
@@ -359,7 +359,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                   <div className="border-t border-gray-600 my-1" />
                   <button
                     onClick={handleClearAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-[#2c3440] hover:text-red-300 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-theme-bg-primary hover:text-red-300 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear All Flows</span>
@@ -370,7 +370,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                       setShowSettingsDialog(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Settings className="w-4 h-4" />
                     <span>Settings</span>
@@ -385,10 +385,10 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Sidebar */}
         <aside 
-          className="bg-[#2c3440] border-r border-gray-700 w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
+          className="bg-theme-bg-primary border-r border-theme-border w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
         >
           {/* Fixed Header Section */}
-          <div className="flex-shrink-0 p-4 space-y-2 bg-[#2c3440]">
+          <div className="flex-shrink-0 p-4 space-y-2 bg-theme-bg-primary">
             {/* Search in sidebar */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -397,7 +397,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                 placeholder="Search flows..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#3a4450] border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
+                className="w-full bg-theme-bg-secondary border border-theme-border rounded-lg pl-9 pr-3 py-2 text-sm text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
               />
             </div>
 
@@ -407,8 +407,8 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                 onClick={() => handleCategoryClick('All')}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                   selectedCategory === 'All'
-                    ? 'bg-[#3a4450] text-gray-200'
-                    : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                    ? 'bg-theme-bg-secondary text-theme-text-primary'
+                    : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                 }`}
               >
                 <GitBranch className="w-4 h-4" />
@@ -424,8 +424,8 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                   onClick={() => handleCategoryClick('Unfiled')}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedCategory === 'Unfiled'
-                      ? 'bg-[#3a4450] text-white'
-                      : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                      ? 'bg-theme-bg-secondary text-white'
+                      : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                   }`}
                 >
                   <GitBranch className="w-4 h-4" />
@@ -440,7 +440,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</span>
               <button
                 onClick={handleCreateCategory}
-                className="text-xs text-gray-500 hover:text-gray-300 p-1"
+                className="text-xs text-gray-500 hover:text-theme-text-primary p-1"
                 title="New Category"
               >
                 <Plus className="w-3 h-3" />
@@ -462,7 +462,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                   <span>No categories yet</span>
                   <button
                     onClick={handleCreateCategory}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-[#3a4450]"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-theme-border text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary"
                   >
                     <Plus className="w-3 h-3" />
                     <span>New category</span>
@@ -486,7 +486,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleCategory(categoryName)}
-                          className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                          className="p-1 text-gray-500 hover:text-theme-text-primary transition-colors"
                           title={isExpanded ? 'Collapse' : 'Expand'}
                         >
                           {isExpanded ? (
@@ -500,8 +500,8 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             onClick={() => handleCategoryClick(categoryName)}
                             className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-colors min-w-0 ${
                               selectedCategory === categoryName
-                                ? 'bg-[#3a4450] text-white'
-                                : 'text-gray-400 hover:bg-[#3a4450] hover:text-gray-200'
+                                ? 'bg-theme-bg-secondary text-white'
+                                : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
                             }`}
                           >
                           {isExpanded ? (
@@ -517,7 +517,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             <button
                               title="Rename category"
                               onClick={() => handleRenameCategory(categoryName)}
-                              className="p-1 text-gray-500 hover:text-gray-300 rounded"
+                              className="p-1 text-gray-500 hover:text-theme-text-primary rounded"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -534,7 +534,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                       {isExpanded && filteredCategoryFlows.length > 0 && (
                         <div className="ml-7 mt-1 space-y-0.5">
                           {filteredCategoryFlows.map((flow) => (
-                            <div key={flow.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-gray-400 hover:bg-[#3a4450] hover:text-gray-200 transition-colors truncate min-w-0">
+                            <div key={flow.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0">
                               <GitBranch className="w-3 h-3 flex-shrink-0" />
                               <button
                                 onClick={() => onNavigateToFlow(flow.id)}
@@ -546,7 +546,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                               <button
                                 title="Edit flow"
                                 onClick={() => onNavigateToFlow(flow.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-gray-300 rounded"
+                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-theme-text-primary rounded"
                               >
                                 <Edit2 className="w-3 h-3" />
                               </button>
@@ -577,7 +577,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
         {/* Main Content */}
         <main className="flex-1 h-full flex flex-col">
           {/* Fixed Header Section */}
-          <div className="flex-shrink-0 bg-[#2c3440] border-b border-gray-700">
+          <div className="flex-shrink-0 bg-theme-bg-primary border-b border-theme-border">
             <div className="max-w-5xl mx-auto px-6 py-6">
               {!loading && (
                 <div className="flex items-center justify-between">
@@ -587,7 +587,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                   {filteredFlows.length > 0 && (
                     <button
                       onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
-                      className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                      className="text-sm text-gray-500 hover:text-theme-text-secondary transition-colors"
                     >
                       Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
                     </button>
@@ -613,12 +613,12 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                   {filteredFlows.map((flow) => (
                     <div
                       key={flow.id}
-                      className="group relative bg-[#3a4450] rounded-lg p-4 hover:bg-[#424d5a] transition-colors cursor-pointer"
+                      className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
                       onClick={() => onNavigateToFlow(flow.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="text-lg text-gray-300 group-hover:text-white transition-colors mb-2">
+                          <h4 className="text-lg text-theme-text-primary group-hover:text-white transition-colors mb-2">
                             {flow.title}
                           </h4>
                           <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
@@ -631,7 +631,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                               {flow.tags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="px-2 py-1 bg-[#2c3440] text-gray-400 text-xs rounded"
+                                  className="px-2 py-1 bg-theme-bg-primary text-theme-text-secondary text-xs rounded"
                                 >
                                   {tag}
                                 </span>
@@ -639,7 +639,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             </div>
                           )}
                           {selectedCategory === 'All' && (
-                            <span className="px-2 py-0.5 rounded bg-[#2c3440] border border-gray-700 text-gray-400 text-xs">
+                            <span className="px-2 py-0.5 rounded bg-theme-bg-primary border border-theme-border text-theme-text-secondary text-xs">
                               {flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
                             </span>
                           )}
@@ -650,7 +650,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             value={flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
                             onChange={(e) => handleAssignCategory(flow.id, e.target.value)}
                             title={flow.category || 'Unfiled'}
-                            className="text-sm bg-[#2c3440] border border-gray-700 rounded px-2 py-1 text-gray-300 max-w-[200px]"
+                            className="text-sm bg-theme-bg-primary border border-theme-border rounded px-2 py-1 text-theme-text-primary max-w-[200px]"
                           >
                             <option value="Unfiled">Unfiled</option>
                             {categories.filter((c) => c !== 'All' && c !== 'Unfiled').map((c) => (
@@ -660,7 +660,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                           </select>
                           <button
                             onClick={(e) => handleDeleteFlow(flow.id, e)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-[#2c3440] rounded transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-theme-bg-primary rounded transition-all"
                             title="Delete flow"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -715,10 +715,10 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
 
       {showCategoryDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">{categoryToRename ? 'Rename Category' : 'New Category'}</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">{categoryToRename ? 'Rename Category' : 'New Category'}</h2>
                 <button
                   onClick={() => {
                     setShowCategoryDialog(false);
@@ -726,7 +726,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                     setNewCategoryName('');
                     setCategoryToRename(null);
                   }}
-                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                  className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
                 >
                   ✕
                 </button>
@@ -735,18 +735,18 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
 
             <div className="px-6 py-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Category name</label>
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">Category name</label>
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Enter category name..."
-                  className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
+                  className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+              <div className="flex justify-end gap-3 pt-2 border-t border-theme-border">
                 <button
                   onClick={() => {
                     setShowCategoryDialog(false);
@@ -754,7 +754,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                     setNewCategoryName('');
                     setCategoryToRename(null);
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -773,16 +773,16 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
 
       {showCategoryDeleteDialog && categoryToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">Delete Category</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">Delete Category</h2>
                 <button
                   onClick={() => {
                     setShowCategoryDeleteDialog(false);
                     setCategoryToDelete(null);
                   }}
-                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                  className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
                 >
                   ✕
                 </button>
@@ -791,15 +791,15 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
             <div className="px-6 py-6 space-y-6">
               {categoryDeleteCount > 0 ? (
                 <>
-                  <div className="text-gray-300">
+                  <div className="text-theme-text-primary">
                     <div className="mb-2">The category</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
                     <div className="mt-3">contains flows. What would you like to do?</div>
                   </div>
                   <div className="flex flex-col gap-3">
                     <button
                       onClick={() => confirmDeleteCategory('move-to-unfiled')}
-                      className="px-5 py-2.5 text-sm font-medium bg-[#3a4450] hover:bg-[#424d5a] text-gray-100 rounded-lg transition-all text-left"
+                      className="px-5 py-2.5 text-sm font-medium bg-theme-bg-secondary hover:bg-theme-bg-tertiary text-gray-100 rounded-lg transition-all text-left"
                     >
                       Move flows to Unfiled and delete category
                     </button>
@@ -813,9 +813,9 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                 </>
               ) : (
                 <>
-                  <div className="text-gray-300">
+                  <div className="text-theme-text-primary">
                     <div className="mb-2">Delete empty category</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-gray-700 bg-[#1f2833] text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <button
@@ -824,7 +824,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                         setCategoryToDelete(null);
                         setCategoryDeleteCount(0);
                       }}
-                      className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                      className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                     >
                       Cancel
                     </button>

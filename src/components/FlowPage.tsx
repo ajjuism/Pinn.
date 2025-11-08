@@ -852,8 +852,8 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
   };
 
   return (
-    <div className="min-h-screen bg-[#2c3440]">
-      <header className="sticky top-0 z-50 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700">
+    <div className="min-h-screen bg-theme-bg-primary">
+      <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border">
         <div className="flex items-center gap-4">
           <button
             onClick={() => {
@@ -862,7 +862,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               }
               onNavigateToFlows();
             }}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
             title="Back to Flows"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -881,13 +881,13 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                   handleSaveTitle();
                 }
               }}
-              className="bg-[#3a4450] border border-gray-600 rounded-lg px-4 py-2 text-gray-300 focus:outline-none focus:border-gray-500 w-full"
+              className="bg-theme-bg-secondary border border-gray-600 rounded-lg px-4 py-2 text-theme-text-primary focus:outline-none focus:border-gray-500 w-full"
               autoFocus
             />
           ) : (
             <button
               onClick={() => setEditingTitle(true)}
-              className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <h2 className="text-xl font-light">{flowTitle}</h2>
               <Edit2 className="w-4 h-4" />
@@ -902,21 +902,21 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               }
               onNavigateToFlows();
             }}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
             <span>Flows</span>
           </button>
           <button
             onClick={onNavigateToNotes}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button
             onClick={handleCreateNewNode}
-            className="flex items-center gap-2 px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-theme-accent hover:bg-[#4F46E5] text-white rounded-lg transition-colors"
             title="Create new node"
           >
             <PlusCircle className="w-5 h-5" />
@@ -928,17 +928,17 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 e.stopPropagation();
                 setShowSearch(!showSearch);
               }}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <Search className="w-5 h-5" />
               <span>Search Notes</span>
             </button>
             {showSearch && (
               <div 
-                className="absolute right-0 mt-2 w-96 bg-[#3a4450] border border-gray-600 rounded-lg shadow-xl z-50 overflow-hidden"
+                className="absolute right-0 mt-2 w-96 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-xl z-50 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-4 border-b border-gray-600 bg-[#2c3440]">
+                <div className="p-4 border-b border-gray-600 bg-theme-bg-primary">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
@@ -946,7 +946,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       placeholder="Search notes..."
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
-                      className="w-full bg-[#3a4450] border border-gray-600 rounded-lg pl-10 pr-4 py-2.5 text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#6366F1] transition-colors text-sm"
+                      className="w-full bg-theme-bg-secondary border border-gray-600 rounded-lg pl-10 pr-4 py-2.5 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-theme-accent transition-colors text-sm"
                       autoFocus
                     />
                   </div>
@@ -954,8 +954,8 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 <div className="max-h-80 overflow-y-auto scrollbar-hide">
                   {searchResults.length > 0 ? (
                     <>
-                      <div className="px-4 py-2 border-b border-gray-600 bg-[#2c3440]">
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="px-4 py-2 border-b border-gray-600 bg-theme-bg-primary">
+                        <div className="flex items-center gap-2 text-xs text-theme-text-secondary">
                           {searchQuery ? (
                             <>
                               <Search className="w-3 h-3" />
@@ -990,17 +990,17 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                             <button
                               key={note.id}
                               onClick={() => handleAddNote(note)}
-                              className="w-full text-left px-3 py-3 hover:bg-[#2c3440] rounded-lg transition-colors group mb-1 border border-transparent hover:border-gray-600"
+                              className="w-full text-left px-3 py-3 hover:bg-theme-bg-primary rounded-lg transition-colors group mb-1 border border-transparent hover:border-gray-600"
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <FileText className="w-4 h-4 text-gray-500 group-hover:text-[#6366F1] transition-colors flex-shrink-0" />
+                                  <FileText className="w-4 h-4 text-gray-500 group-hover:text-theme-accent transition-colors flex-shrink-0" />
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors truncate mb-0.5">
+                                    <h4 className="text-sm font-medium text-theme-text-primary group-hover:text-white transition-colors truncate mb-0.5">
                                       {searchQuery && note.title.toLowerCase().includes(searchQuery.toLowerCase()) ? (
                                         <>
                                           {note.title.substring(0, note.title.toLowerCase().indexOf(searchQuery.toLowerCase()))}
-                                          <span className="bg-[#6366F1]/20 text-[#6366F1] px-0.5 rounded">
+                                          <span className="bg-theme-accent/20 text-theme-accent px-0.5 rounded">
                                             {note.title.substring(
                                               note.title.toLowerCase().indexOf(searchQuery.toLowerCase()),
                                               note.title.toLowerCase().indexOf(searchQuery.toLowerCase()) + searchQuery.length
@@ -1020,7 +1020,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                                     </div>
                                   </div>
                                 </div>
-                                <PlusCircle className="w-5 h-5 text-gray-500 group-hover:text-[#6366F1] transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" />
+                                <PlusCircle className="w-5 h-5 text-gray-500 group-hover:text-theme-accent transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100" />
                               </div>
                             </button>
                           );
@@ -1030,13 +1030,13 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                   ) : searchQuery ? (
                     <div className="p-8 text-center">
                       <Search className="w-8 h-8 text-gray-500 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm text-gray-400 mb-1">No notes found</p>
+                      <p className="text-sm text-theme-text-secondary mb-1">No notes found</p>
                       <p className="text-xs text-gray-500">Try a different search term</p>
                     </div>
                   ) : (
                     <div className="p-8 text-center">
                       <Search className="w-8 h-8 text-gray-500 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm text-gray-400 mb-1">Start typing to search</p>
+                      <p className="text-sm text-theme-text-secondary mb-1">Start typing to search</p>
                       <p className="text-xs text-gray-500">or browse recent notes above</p>
                     </div>
                   )}
@@ -1048,10 +1048,10 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
       </header>
 
       <div className="flex h-[calc(100vh-73px)]">
-        <div className="w-64 bg-[#3a4450] border-r border-gray-700 p-4 overflow-y-auto">
+        <div className="w-64 bg-theme-bg-secondary border-r border-theme-border p-4 overflow-y-auto">
           <div className="mb-6">
             <div className="mb-3">
-              <label className="text-xs font-medium text-gray-400 block leading-tight">Default Node Color</label>
+              <label className="text-xs font-medium text-theme-text-secondary block leading-tight">Default Node Color</label>
               <span className="text-xs text-gray-500">For new nodes</span>
             </div>
             <div className="grid grid-cols-4 gap-2.5">
@@ -1064,7 +1064,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                     className={`relative w-9 h-9 rounded-lg border-2 transition-all hover:scale-105 ${
                       isSelected
                         ? 'border-gray-300 scale-105 ring-2 ring-gray-400/50 ring-offset-2 ring-offset-[#3a4450]'
-                        : 'border-gray-700 hover:border-gray-600'
+                        : 'border-theme-border hover:border-gray-600'
                     }`}
                     style={{ backgroundColor: color }}
                     title={color}
@@ -1080,11 +1080,11 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           <div className="border-t border-gray-600 mb-4"></div>
           {selectedNodes.length > 0 && (
             <>
-              <div className="mb-4 p-3 bg-[#2c3440]/40 rounded border border-gray-700/50">
+              <div className="mb-4 p-3 bg-theme-bg-primary/40 rounded border border-theme-border/50">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-gray-400">
+                    <div className="text-xs font-medium text-theme-text-secondary">
                       {selectedNodes.length} {selectedNodes.length === 1 ? 'node' : 'nodes'} selected
                     </div>
                     {selectedNodes.length === 1 && (
@@ -1111,13 +1111,13 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       return (
                         <div
                           key={nodeId}
-                          className="flex items-center gap-2 px-2 py-1 rounded bg-[#2c3440]/30"
+                          className="flex items-center gap-2 px-2 py-1 rounded bg-theme-bg-primary/30"
                         >
                           <div
                             className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: node.data.color || '#6366F1' }}
                           />
-                          <span className="text-xs text-gray-400 truncate flex-1">
+                          <span className="text-xs text-theme-text-secondary truncate flex-1">
                             {node.data.label || 'Untitled'}
                           </span>
                         </div>
@@ -1144,7 +1144,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                             className={`relative w-7 h-7 rounded border transition-all ${
                               isSelected
                                 ? 'border-gray-400 ring-1 ring-gray-500/50'
-                                : 'border-gray-700 hover:border-gray-600'
+                                : 'border-theme-border hover:border-gray-600'
                             }`}
                             style={{ backgroundColor: color }}
                             title={color}
@@ -1171,7 +1171,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                           className={`w-full px-2 py-1.5 rounded text-xs transition-all flex items-center justify-center gap-1.5 ${
                             allCompleted
                               ? 'bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 hover:border-green-500/50 text-green-400/80 hover:text-green-400'
-                              : 'bg-[#3a4450]/50 hover:bg-[#3a4450] border border-gray-700/50 hover:border-gray-600 text-gray-300 hover:text-white'
+                              : 'bg-theme-bg-secondary/50 hover:bg-theme-bg-secondary border border-theme-border/50 hover:border-gray-600 text-theme-text-primary hover:text-white'
                           }`}
                         >
                           <CheckCircle2 className={`w-3 h-3 ${allCompleted ? '' : 'opacity-50'}`} />
@@ -1207,11 +1207,11 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           )}
           {selectedEdges.length > 0 && (
             <>
-              <div className="mb-4 p-3 bg-[#2c3440]/40 rounded border border-gray-700/50">
+              <div className="mb-4 p-3 bg-theme-bg-primary/40 rounded border border-theme-border/50">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-gray-400">
+                    <div className="text-xs font-medium text-theme-text-secondary">
                       {selectedEdges.length} {selectedEdges.length === 1 ? 'edge' : 'edges'} selected
                     </div>
                   </div>
@@ -1235,13 +1235,13 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       return (
                         <div
                           key={edgeId}
-                          className="flex items-center gap-2 px-2 py-1 rounded bg-[#2c3440]/30"
+                          className="flex items-center gap-2 px-2 py-1 rounded bg-theme-bg-primary/30"
                         >
                           <div
                             className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: edge.style?.stroke || '#6366F1' }}
                           />
-                          <span className="text-xs text-gray-400 truncate flex-1">
+                          <span className="text-xs text-theme-text-secondary truncate flex-1">
                             {sourceNode?.data.label || 'Node'} → {targetNode?.data.label || 'Node'}
                           </span>
                         </div>
@@ -1268,7 +1268,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                             className={`relative w-7 h-7 rounded border transition-all ${
                               isSelected
                                 ? 'border-gray-400 ring-1 ring-gray-500/50'
-                                : 'border-gray-700 hover:border-gray-600'
+                                : 'border-theme-border hover:border-gray-600'
                             }`}
                             style={{ backgroundColor: color }}
                             title={color}
@@ -1314,8 +1314,8 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                   }}
                   className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                     selectedTags.includes(tag)
-                      ? 'bg-[#6366F1] text-white'
-                      : 'bg-[#2c3440] text-gray-300 hover:bg-[#2c3440] hover:text-white'
+                      ? 'bg-theme-accent text-white'
+                      : 'bg-theme-bg-primary text-theme-text-primary hover:bg-theme-bg-primary hover:text-white'
                   }`}
                 >
                   {tag}
@@ -1324,7 +1324,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               {selectedTags.length > 0 && (
                 <button
                   onClick={() => setSelectedTags([])}
-                  className="w-full text-left px-3 py-2 rounded text-sm bg-[#2c3440] text-gray-400 hover:text-white transition-colors"
+                  className="w-full text-left px-3 py-2 rounded text-sm bg-theme-bg-primary text-theme-text-secondary hover:text-white transition-colors"
                 >
                   Clear filters
                 </button>
@@ -1406,11 +1406,11 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           </ReactFlowProvider>
 
           {showNodeOptions && (
-            <div className="absolute top-4 right-4 bg-[#2c3440] border border-gray-700 rounded-lg shadow-xl p-5 z-50 w-72 backdrop-blur-sm">
+            <div className="absolute top-4 right-4 bg-theme-bg-primary border border-theme-border rounded-lg shadow-xl p-5 z-50 w-72 backdrop-blur-sm">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-700/50">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-theme-border/50">
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-gray-200 truncate">
+                  <h4 className="text-sm font-medium text-theme-text-primary truncate">
                     {showNodeOptions.data.label || 'Untitled Node'}
                   </h4>
                   <p className="text-xs text-gray-500">Node options</p>
@@ -1419,7 +1419,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                   onClick={() => setShowNodeOptions(null)}
                   className="p-1.5 hover:bg-gray-700/50 rounded transition-colors flex-shrink-0"
                 >
-                  <X className="w-4 h-4 text-gray-400 hover:text-gray-300" />
+                  <X className="w-4 h-4 text-theme-text-secondary hover:text-theme-text-primary" />
                 </button>
               </div>
 
@@ -1438,7 +1438,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               <div className="space-y-4">
                 {/* Color Picker */}
                 <div>
-                  <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-3">
+                  <label className="flex items-center gap-2 text-xs font-medium text-theme-text-secondary mb-3">
                     <Palette className="w-3.5 h-3.5" />
                     Color
                   </label>
@@ -1452,7 +1452,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                           className={`relative w-9 h-9 rounded-lg border-2 transition-all hover:scale-105 ${
                             isCurrentColor
                               ? 'border-gray-300 scale-105 ring-2 ring-gray-400/50 ring-offset-2 ring-offset-[#2c3440]'
-                              : 'border-gray-700 hover:border-gray-600'
+                              : 'border-theme-border hover:border-gray-600'
                           }`}
                           style={{ backgroundColor: color }}
                           title={color}
@@ -1468,7 +1468,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
 
                 {/* Tags Section */}
                 <div>
-                  <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
+                  <label className="flex items-center gap-2 text-xs font-medium text-theme-text-secondary mb-2">
                     <Tag className="w-3.5 h-3.5" />
                     Tags
                   </label>
@@ -1477,7 +1477,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       {(showNodeOptions.data.tags || []).map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#3a4450]/50 border border-gray-700/50 text-gray-300 text-xs rounded-md hover:bg-[#3a4450] transition-colors"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-theme-bg-secondary/50 border border-theme-border/50 text-theme-text-primary text-xs rounded-md hover:bg-theme-bg-secondary transition-colors"
                         >
                           {tag}
                           <button
@@ -1502,12 +1502,12 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                         }
                       }}
                       placeholder="Add tag..."
-                      className="flex-1 bg-[#3a4450]/50 border border-gray-700 rounded-md px-3 py-1.5 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#6366F1]/50 focus:bg-[#3a4450] transition-colors"
+                      className="flex-1 bg-theme-bg-secondary/50 border border-theme-border rounded-md px-3 py-1.5 text-sm text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-theme-accent/50 focus:bg-theme-bg-secondary transition-colors"
                     />
                     <button
                       onClick={() => handleAddTagToNode(showNodeOptions.id, newTag)}
                       disabled={!newTag.trim()}
-                      className="px-3 py-1.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center h-[34px] w-[34px]"
+                      className="px-3 py-1.5 bg-theme-accent hover:bg-[#4F46E5] text-white rounded-md text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center h-[34px] w-[34px]"
                       title="Add tag"
                     >
                       <PlusCircle className="w-4 h-4" />
@@ -1516,13 +1516,13 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Completed Toggle */}
-                <div className="pt-2 border-t border-gray-700/50">
+                <div className="pt-2 border-t border-theme-border/50">
                   <button
                     onClick={() => handleToggleCompleted(showNodeOptions.id)}
                     className={`w-full px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                       showNodeOptions.data.completed
                         ? 'bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 hover:border-green-500/50 text-green-400 hover:text-green-300'
-                        : 'bg-[#3a4450]/50 hover:bg-[#3a4450] border border-gray-700/50 hover:border-gray-600 text-gray-300 hover:text-white'
+                        : 'bg-theme-bg-secondary/50 hover:bg-theme-bg-secondary border border-theme-border/50 hover:border-gray-600 text-theme-text-primary hover:text-white'
                     }`}
                   >
                     <CheckCircle2 className={`w-4 h-4 ${showNodeOptions.data.completed ? '' : 'opacity-50'}`} />
@@ -1531,7 +1531,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Delete Button */}
-                <div className="pt-2 border-t border-gray-700/50">
+                <div className="pt-2 border-t border-theme-border/50">
                   <button
                     onClick={() => handleDeleteNode(showNodeOptions.id)}
                     className="w-full px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2"
@@ -1547,25 +1547,25 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           {showEdgeOptions && (
             <div
               ref={edgeOptionsRef}
-              className="absolute top-4 right-4 bg-[#2c3440] border border-gray-700 rounded-lg shadow-xl p-5 z-50 w-72 backdrop-blur-sm"
+              className="absolute top-4 right-4 bg-theme-bg-primary border border-theme-border rounded-lg shadow-xl p-5 z-50 w-72 backdrop-blur-sm"
             >
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-700/50">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-theme-border/50">
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-gray-200">Edge Options</h4>
+                  <h4 className="text-sm font-medium text-theme-text-primary">Edge Options</h4>
                   <p className="text-xs text-gray-500">Connection settings</p>
                 </div>
                 <button
                   onClick={() => setShowEdgeOptions(null)}
                   className="p-1.5 hover:bg-gray-700/50 rounded transition-colors flex-shrink-0"
                 >
-                  <X className="w-4 h-4 text-gray-400 hover:text-gray-300" />
+                  <X className="w-4 h-4 text-theme-text-secondary hover:text-theme-text-primary" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 {/* Color Picker */}
                 <div>
-                  <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-3">
+                  <label className="flex items-center gap-2 text-xs font-medium text-theme-text-secondary mb-3">
                     <Palette className="w-3.5 h-3.5" />
                     Color
                   </label>
@@ -1579,7 +1579,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                           className={`relative w-9 h-9 rounded-lg border-2 transition-all hover:scale-105 ${
                             isCurrentColor
                               ? 'border-gray-300 scale-105 ring-2 ring-gray-400/50 ring-offset-2 ring-offset-[#2c3440]'
-                              : 'border-gray-700 hover:border-gray-600'
+                              : 'border-theme-border hover:border-gray-600'
                           }`}
                           style={{ backgroundColor: color }}
                           title={color}
@@ -1594,7 +1594,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Delete Button */}
-                <div className="pt-2 border-t border-gray-700/50">
+                <div className="pt-2 border-t border-theme-border/50">
                   <button
                     onClick={() => handleDeleteEdge(showEdgeOptions.id)}
                     className="w-full px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2"
@@ -1618,10 +1618,10 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           }}
         >
           <div 
-            className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-600"
+            className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-600"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-[#3a4450] to-[#2c3440] px-6 py-5 border-b border-gray-700">
+            <div className="bg-gradient-to-r from-[#3a4450] to-[#2c3440] px-6 py-5 border-b border-theme-border">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="mb-2">
@@ -1656,7 +1656,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       />
                     ) : (
                       <h2 
-                        className="text-2xl font-semibold text-gray-100 cursor-text hover:text-gray-200 transition-colors"
+                        className="text-2xl font-semibold text-gray-100 cursor-text hover:text-theme-text-primary transition-colors"
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -1669,7 +1669,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       </h2>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-theme-text-secondary">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
                       <span>
@@ -1689,7 +1689,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                           {selectedNode.data.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 bg-[#2c3440] text-gray-300 text-xs rounded border border-gray-600"
+                              className="px-2 py-0.5 bg-theme-bg-primary text-theme-text-primary text-xs rounded border border-gray-600"
                             >
                               {tag}
                             </span>
@@ -1702,7 +1702,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => onNavigateToEditor(selectedNote.id)}
-                    className="px-4 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
+                    className="px-4 py-2.5 bg-theme-accent hover:bg-[#4F46E5] text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit Note
@@ -1712,7 +1712,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                       setShowPreview(false);
                       setSelectedNode(null);
                     }}
-                    className="p-2.5 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg transition-colors"
+                    className="p-2.5 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg transition-colors"
                     title="Close"
                   >
                     <X className="w-5 h-5" />
@@ -1720,7 +1720,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto scrollbar-hide px-8 py-6 bg-[#2c3440]">
+            <div className="flex-1 overflow-y-auto scrollbar-hide px-8 py-6 bg-theme-bg-primary">
               <MarkdownPreview content={selectedNote.content || ''} />
             </div>
           </div>
@@ -1730,7 +1730,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
       {/* Help Button */}
       <button
         onClick={() => setShowHelp(!showHelp)}
-        className="fixed bottom-6 left-6 w-12 h-12 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-40 group"
+        className="fixed bottom-6 left-6 w-12 h-12 bg-theme-accent hover:bg-[#4F46E5] text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-40 group"
         title="Help & Navigation Guide"
       >
         <HelpCircle className="w-6 h-6" />
@@ -1743,165 +1743,165 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           onClick={() => setShowHelp(false)}
         >
           <div 
-            className="bg-[#2c3440] rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-700"
+            className="bg-theme-bg-primary rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-theme-border"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-5 border-b border-gray-700">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#6366F1]/10 flex items-center justify-center border border-[#6366F1]/20">
-                    <HelpCircle className="w-5 h-5 text-[#6366F1]" />
+                  <div className="w-9 h-9 rounded-lg bg-theme-accent/10 flex items-center justify-center border border-theme-accent/20">
+                    <HelpCircle className="w-5 h-5 text-theme-accent" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-200">Navigation Guide</h2>
+                    <h2 className="text-lg font-semibold text-theme-text-primary">Navigation Guide</h2>
                     <p className="text-xs text-gray-500 mt-0.5">Keyboard shortcuts and interactions</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowHelp(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-gray-700/50 rounded transition-colors"
+                  className="p-1.5 text-theme-text-secondary hover:text-theme-text-primary hover:bg-gray-700/50 rounded transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6 bg-[#2c3440]">
+            <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6 bg-theme-bg-primary">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Nodes Section */}
-                <div className="bg-[#3a4450]/40 rounded-lg p-5 border border-gray-700/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/40">
-                    <div className="w-8 h-8 rounded-lg bg-[#6366F1]/15 flex items-center justify-center border border-[#6366F1]/20">
-                      <FileText className="w-4 h-4 text-[#6366F1]" />
+                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
+                    <div className="w-8 h-8 rounded-lg bg-theme-accent/15 flex items-center justify-center border border-theme-accent/20">
+                      <FileText className="w-4 h-4 text-theme-accent" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-300">Nodes</h3>
+                    <h3 className="text-base font-semibold text-theme-text-primary">Nodes</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">1</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">1</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Click</span> to select</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Click</span> to select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">2</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">2</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">3</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">3</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Double-click</span> to preview</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Double-click</span> to preview</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">4</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">4</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Right-click</span> for options</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Right-click</span> for options</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">5</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">5</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Delete/Backspace</span> to remove</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Delete/Backspace</span> to remove</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#6366F1]/15 transition-colors">
-                        <span className="text-[#6366F1] text-[10px] font-bold">6</span>
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                        <span className="text-theme-accent text-[10px] font-bold">6</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Drag</span> to reposition</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Drag</span> to reposition</span>
                     </li>
                   </ul>
                 </div>
 
                 {/* Edges Section */}
-                <div className="bg-[#3a4450]/40 rounded-lg p-5 border border-gray-700/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/40">
+                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
                     <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 flex items-center justify-center border border-[#8B5CF6]/20">
                       <GitBranch className="w-4 h-4 text-[#8B5CF6]" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-300">Connections</h3>
+                    <h3 className="text-base font-semibold text-theme-text-primary">Connections</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">1</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Drag</span> from handle to create</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Drag</span> from handle to create</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">2</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Click</span> to select</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Click</span> to select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">3</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">4</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Right-click</span> for options</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Right-click</span> for options</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">5</span>
                       </div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Delete/Backspace</span> to remove</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Delete/Backspace</span> to remove</span>
                     </li>
                   </ul>
                 </div>
 
                 {/* Sidebar Section */}
-                <div className="bg-[#3a4450]/40 rounded-lg p-5 border border-gray-700/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/40">
+                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
                     <div className="w-8 h-8 rounded-lg bg-[#EC4899]/15 flex items-center justify-center border border-[#EC4899]/20">
                       <Palette className="w-4 h-4 text-[#EC4899]" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-300">Sidebar</h3>
+                    <h3 className="text-base font-semibold text-theme-text-primary">Sidebar</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#EC4899] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Bulk change colors via multi-select</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors">Bulk change colors via multi-select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#EC4899] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Filter nodes using tags</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors">Filter nodes using tags</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#EC4899] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Set default node color</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors">Set default node color</span>
                     </li>
                   </ul>
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-[#3a4450]/40 rounded-lg p-5 border border-gray-700/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700/40">
+                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
                     <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 flex items-center justify-center border border-[#10B981]/20">
                       <PlusCircle className="w-4 h-4 text-[#10B981]" />
                     </div>
-                    <h3 className="text-base font-semibold text-gray-300">Actions</h3>
+                    <h3 className="text-base font-semibold text-theme-text-primary">Actions</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">New Node</span> creates note & adds to flow</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">New Node</span> creates note & adds to flow</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors"><span className="text-gray-300 font-medium">Search Notes</span> to add existing notes</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Search Notes</span> to add existing notes</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] flex-shrink-0 mt-1.5"></div>
-                      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Click flow title to rename</span>
+                      <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors">Click flow title to rename</span>
                     </li>
                   </ul>
                 </div>

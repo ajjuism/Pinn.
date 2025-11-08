@@ -16,7 +16,7 @@ const MarkdownEditor = forwardRef<HTMLTextAreaElement, MarkdownEditorProps>(
           onChange={(e) => onChange(e.target.value)}
           readOnly={readOnly}
           placeholder="Start writing your note..."
-          className="w-full bg-transparent text-gray-300 placeholder-gray-600 focus:outline-none resize-none font-mono text-sm leading-relaxed markdown-editor-textarea"
+          className="w-full bg-transparent text-theme-text-primary placeholder-gray-600 focus:outline-none resize-none font-mono text-sm leading-relaxed markdown-editor-textarea"
           style={{ 
             lineHeight: '1.8',
             minHeight: 'calc(100vh - 300px)',

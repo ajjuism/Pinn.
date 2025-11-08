@@ -789,12 +789,12 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
   };
 
   return (
-    <div className="h-screen bg-[#2c3440] flex flex-col overflow-hidden">
-      <header className="flex-shrink-0 bg-[#2c3440] flex items-center justify-between px-6 py-4 border-b border-gray-700">
+    <div className="h-screen bg-theme-bg-primary flex flex-col overflow-hidden">
+      <header className="flex-shrink-0 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border">
         <div className="flex items-center gap-4">
           <button
             onClick={onNavigateToNotes}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
             title="Back to Notes"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -804,21 +804,21 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
         <div className="flex items-center gap-4">
           <button
             onClick={onNavigateToHome}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>New Note</span>
           </button>
           <button
             onClick={onNavigateToNotes}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button
             onClick={onNavigateToFlows}
-            className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
             <span>Flow</span>
@@ -826,17 +826,17 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
             >
               <MenuIcon className="w-5 h-5" />
               <span>Menu</span>
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-56 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
                     onClick={handleImportNotes}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Upload className="w-4 h-4" />
                     <span>Import Notes</span>
@@ -846,21 +846,21 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                     <>
                       <button
                         onClick={handleExportNote}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                       >
                         <Download className="w-4 h-4" />
                         <span>Export Note (JSON)</span>
                       </button>
                       <button
                         onClick={handleExportNoteMarkdown}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                       >
                         <Download className="w-4 h-4" />
                         <span>Export Note (Markdown)</span>
                       </button>
                       <button
                         onClick={handleDeleteNote}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-[#2c3440] hover:text-red-300 transition-colors"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-theme-bg-primary hover:text-red-300 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                         <span>Delete Note</span>
@@ -870,14 +870,14 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                   )}
                   <button
                     onClick={handleExportAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (JSON)</span>
                   </button>
                   <button
                     onClick={handleExportAllMarkdown}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Export All Notes (Markdown)</span>
@@ -888,7 +888,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                       setShowSettingsDialog(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-300 hover:bg-[#2c3440] hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
                   >
                     <Settings className="w-4 h-4" />
                     <span>Settings</span>
@@ -901,24 +901,24 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
       </header>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 max-w-6xl w-full mx-auto px-6 pt-8 pb-4 bg-[#2c3440]">
+        <div className="flex-shrink-0 max-w-6xl w-full mx-auto px-6 pt-8 pb-4 bg-theme-bg-primary">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
-            className="w-full bg-transparent text-4xl font-light text-gray-300 placeholder-gray-600 focus:outline-none mb-4"
+            className="w-full bg-transparent text-4xl font-light text-theme-text-primary placeholder-gray-600 focus:outline-none mb-4"
           />
 
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-[#3a4450] rounded-lg p-1">
+              <div className="flex items-center gap-2 bg-theme-bg-secondary rounded-lg p-1">
                 <button
                   onClick={() => setEditorMode('markdown')}
                   className={`px-4 py-2 rounded-md text-sm transition-colors ${
                     editorMode === 'markdown'
-                      ? 'bg-[#2c3440] text-white'
-                      : 'text-gray-400 hover:text-gray-300'
+                      ? 'bg-theme-bg-primary text-white'
+                      : 'text-theme-text-secondary hover:text-theme-text-primary'
                   }`}
                 >
                   Write
@@ -927,8 +927,8 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                   onClick={() => setEditorMode('preview')}
                   className={`px-4 py-2 rounded-md text-sm transition-colors ${
                     editorMode === 'preview'
-                      ? 'bg-[#2c3440] text-white'
-                      : 'text-gray-400 hover:text-gray-300'
+                      ? 'bg-theme-bg-primary text-white'
+                      : 'text-theme-text-secondary hover:text-theme-text-primary'
                   }`}
                 >
                   Preview
@@ -943,7 +943,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                   value={folder}
                   onChange={(e) => handleFolderChange(e.target.value)}
                   title={folder}
-                  className="text-sm bg-[#3a4450] border border-gray-700 rounded px-2 py-1 text-gray-300 max-w-[200px]"
+                  className="text-sm bg-theme-bg-secondary border border-theme-border rounded px-2 py-1 text-theme-text-primary max-w-[200px]"
                 >
                   <option value="Unfiled">Unfiled</option>
                   {folders.map((f) => (
@@ -973,7 +973,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                     }
                     setShowAIDialog(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-300 hover:bg-[#3a4450] rounded transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded transition-colors"
                   title="AI Assistant"
                 >
                   <Sparkles className="w-4 h-4" />
@@ -985,15 +985,15 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                     <button
                       ref={flowButtonRef}
                       onClick={handleAddToFlowClick}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-300 hover:bg-[#3a4450] rounded transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded transition-colors"
                       onMouseEnter={() => noteFlowInfo.length > 0 && setShowFlowTooltip(true)}
                       onMouseLeave={() => setShowFlowTooltip(false)}
                     >
                       Add to flow
                     </button>
                     {showFlowTooltip && noteFlowInfo.length > 0 && (
-                      <div className="absolute top-full left-0 mt-2 px-3 py-2.5 bg-[#3a4450] border border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px]">
-                        <div className="text-sm text-gray-300">
+                      <div className="absolute top-full left-0 mt-2 px-3 py-2.5 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px]">
+                        <div className="text-sm text-theme-text-primary">
                           {noteFlowInfo.length === 1 ? (
                             <>
                               Note added to <span className="font-semibold text-[#e8935f]">{noteFlowInfo[0].flowTitle}</span>
@@ -1012,14 +1012,14 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                             </div>
                           )}
                         </div>
-                        <div className="absolute -top-1 left-4 w-2 h-2 bg-[#3a4450] border-l border-t border-gray-600 transform rotate-45"></div>
+                        <div className="absolute -top-1 left-4 w-2 h-2 bg-theme-bg-secondary border-l border-t border-gray-600 transform rotate-45"></div>
                       </div>
                     )}
                   </div>
                   <div className="text-sm text-gray-500">{saving ? 'Saving…' : 'Saved'}</div>
                   <button
                     onClick={handleDeleteNote}
-                    className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-[#3a4450] rounded transition-colors"
+                    className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-theme-bg-secondary rounded transition-colors"
                     title="Delete note"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1033,48 +1033,48 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
           </div>
 
           {isEditMode && editorMode === 'markdown' && (
-            <div className="flex items-center gap-1 pb-6 border-b border-gray-700 flex-wrap">
-              <button onClick={() => wrapSelection('**')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+            <div className="flex items-center gap-1 pb-6 border-b border-theme-border flex-wrap">
+              <button onClick={() => wrapSelection('**')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Bold className="w-5 h-5" />
               </button>
-              <button onClick={() => wrapSelection('*')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => wrapSelection('*')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Italic className="w-5 h-5" />
               </button>
-              <button onClick={() => wrapSelection('~~')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => wrapSelection('~~')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Strikethrough className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-700 mx-2" />
-              <button onClick={() => insertAtCursor('\n\n---\n\n')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => insertAtCursor('\n\n---\n\n')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Minus className="w-5 h-5" />
               </button>
-              <button onClick={() => applyToSelectedLines('> ')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => applyToSelectedLines('> ')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Quote className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-700 mx-2" />
-              <button onClick={() => applyToSelectedLines('- ')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => applyToSelectedLines('- ')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <List className="w-5 h-5" />
               </button>
-              <button onClick={() => applyToSelectedLines('1. ')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => applyToSelectedLines('1. ')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <ListOrdered className="w-5 h-5" />
               </button>
-              <button onClick={() => applyToSelectedLines('- [ ] ')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => applyToSelectedLines('- [ ] ')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <CheckSquare className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-700 mx-2" />
-              <button onClick={() => insertAtCursor(`\n\n| Column 1 | Column 2 | Column 3 |\n|---------:|:--------:|:---------|\n| value    | value    | value    |\n\n`)} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => insertAtCursor(`\n\n| Column 1 | Column 2 | Column 3 |\n|---------:|:--------:|:---------|\n| value    | value    | value    |\n\n`)} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Table className="w-5 h-5" />
               </button>
-              <button onClick={() => insertAtCursor('![alt text](https://)')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => insertAtCursor('![alt text](https://)')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Image className="w-5 h-5" />
               </button>
-              <button onClick={() => insertAtCursor('[link text](https://)')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => insertAtCursor('[link text](https://)')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Link className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-700 mx-2" />
-              <button onClick={() => wrapSelection('`')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => wrapSelection('`')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Code className="w-5 h-5" />
               </button>
-              <button onClick={() => wrapSelection('\n```\n', '\n```\n')} className="p-2 text-gray-400 hover:text-white hover:bg-[#3a4450] rounded transition-colors">
+              <button onClick={() => wrapSelection('\n```\n', '\n```\n')} className="p-2 text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded transition-colors">
                 <Code2 className="w-5 h-5" />
               </button>
             </div>
@@ -1110,17 +1110,17 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
 
       {showFlowModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">Add to Flow</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">Add to Flow</h2>
               <button
                 onClick={() => {
                   setShowFlowModal(false);
                   setSelectedFlowId(null);
                   setNewFlowName('');
                 }}
-                className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1129,8 +1129,8 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
 
             <div className="px-6 py-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Select existing flow</label>
-                <div className="max-h-48 overflow-y-auto border border-gray-700 rounded-lg bg-[#1f2833]">
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">Select existing flow</label>
+                <div className="max-h-48 overflow-y-auto border border-theme-border rounded-lg bg-theme-bg-darkest">
                   {flows.length > 0 ? (
                     flows.map((flow) => (
                       <button
@@ -1142,8 +1142,8 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                         className={`w-full text-left px-4 py-3 transition-all duration-200 ${
                           selectedFlowId === flow.id
                             ? 'bg-[#e8935f] text-white shadow-md'
-                            : 'text-gray-300 hover:bg-[#3a4450] hover:text-white'
-                        } ${flows.indexOf(flow) !== flows.length - 1 ? 'border-b border-gray-700' : ''}`}
+                            : 'text-theme-text-primary hover:bg-theme-bg-secondary hover:text-white'
+                        } ${flows.indexOf(flow) !== flows.length - 1 ? 'border-b border-theme-border' : ''}`}
                       >
                         <span className="font-medium">{flow.title}</span>
                       </button>
@@ -1159,15 +1159,15 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700"></div>
+                  <div className="w-full border-t border-theme-border"></div>
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-3 py-1 bg-[#2c3440] text-xs font-medium text-gray-500 uppercase tracking-wider">OR</span>
+                  <span className="px-3 py-1 bg-theme-bg-primary text-xs font-medium text-gray-500 uppercase tracking-wider">OR</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Create new flow</label>
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">Create new flow</label>
                 <input
                   type="text"
                   value={newFlowName}
@@ -1176,19 +1176,19 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
                     setSelectedFlowId(null);
                   }}
                   placeholder="Enter flow name..."
-                  className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
+                  className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+              <div className="flex justify-end gap-3 pt-2 border-t border-theme-border">
                 <button
                   onClick={() => {
                     setShowFlowModal(false);
                     setSelectedFlowId(null);
                     setNewFlowName('');
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -1255,16 +1255,16 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
 
       {showFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2c3440] rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-700">
+          <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
+            <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-gray-200">New Folder</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">New Folder</h2>
                 <button
                   onClick={() => {
                     setShowFolderDialog(false);
                     setNewFolderName('');
                   }}
-                  className="text-gray-400 hover:text-white hover:bg-[#3a4450] rounded-lg p-1.5 transition-colors"
+                  className="text-theme-text-secondary hover:text-white hover:bg-theme-bg-secondary rounded-lg p-1.5 transition-colors"
                 >
                   ✕
                 </button>
@@ -1273,24 +1273,24 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
 
             <div className="px-6 py-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Folder name</label>
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">Folder name</label>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   placeholder="Enter folder name..."
-                  className="w-full bg-[#1f2833] border border-gray-700 rounded-lg px-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
+                  className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
                   autoFocus
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+              <div className="flex justify-end gap-3 pt-2 border-t border-theme-border">
                 <button
                   onClick={() => {
                     setShowFolderDialog(false);
                     setNewFolderName('');
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-[#3a4450] rounded-lg transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
