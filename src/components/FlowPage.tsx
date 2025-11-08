@@ -1743,72 +1743,72 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
           onClick={() => setShowHelp(false)}
         >
           <div 
-            className="bg-theme-bg-primary rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-theme-border"
+            className="bg-theme-bg-darkest rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-theme-border"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-5 border-b border-theme-border">
+            <div className="px-6 py-5 border-b border-theme-border bg-theme-bg-darkest">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-theme-accent/10 flex items-center justify-center border border-theme-accent/20">
+                  <div className="w-9 h-9 rounded-lg bg-theme-accent/15 flex items-center justify-center">
                     <HelpCircle className="w-5 h-5 text-theme-accent" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-theme-text-primary">Navigation Guide</h2>
-                    <p className="text-xs text-gray-500 mt-0.5">Keyboard shortcuts and interactions</p>
+                    <p className="text-xs text-theme-text-secondary mt-0.5">Keyboard shortcuts and interactions</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowHelp(false)}
-                  className="p-1.5 text-theme-text-secondary hover:text-theme-text-primary hover:bg-gray-700/50 rounded transition-colors"
+                  className="p-1.5 text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-bg-secondary rounded transition-colors focus:outline-none focus:ring-0"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6 bg-theme-bg-primary">
+            <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6 bg-theme-bg-darkest">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Nodes Section */}
-                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
-                    <div className="w-8 h-8 rounded-lg bg-theme-accent/15 flex items-center justify-center border border-theme-accent/20">
+                <div className="bg-theme-bg-primary rounded-xl p-5 border border-theme-border transition-all shadow-sm">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border">
+                    <div className="w-8 h-8 rounded-lg bg-theme-accent/15 flex items-center justify-center">
                       <FileText className="w-4 h-4 text-theme-accent" />
                     </div>
                     <h3 className="text-base font-semibold text-theme-text-primary">Nodes</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">1</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Click</span> to select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">2</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">3</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Double-click</span> to preview</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">4</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Right-click</span> for options</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">5</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Delete/Backspace</span> to remove</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-theme-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-theme-accent/20 transition-colors">
                         <span className="text-theme-accent text-[10px] font-bold">6</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Drag</span> to reposition</span>
@@ -1817,40 +1817,40 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Edges Section */}
-                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
-                    <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 flex items-center justify-center border border-[#8B5CF6]/20">
+                <div className="bg-theme-bg-primary rounded-xl p-5 border border-theme-border transition-all shadow-sm">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border">
+                    <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 flex items-center justify-center">
                       <GitBranch className="w-4 h-4 text-[#8B5CF6]" />
                     </div>
                     <h3 className="text-base font-semibold text-theme-text-primary">Connections</h3>
                   </div>
                   <ul className="space-y-2.5">
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/20 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">1</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Drag</span> from handle to create</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/20 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">2</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Click</span> to select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/20 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">3</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Cmd/Ctrl + Click</span> to multi-select</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/20 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">4</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Right-click</span> for options</span>
                     </li>
                     <li className="flex items-start gap-2.5 group">
-                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/15 transition-colors">
+                      <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/15 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:bg-[#8B5CF6]/20 transition-colors">
                         <span className="text-[#8B5CF6] text-[10px] font-bold">5</span>
                       </div>
                       <span className="text-sm text-theme-text-secondary group-hover:text-theme-text-primary transition-colors"><span className="text-theme-text-primary font-medium">Delete/Backspace</span> to remove</span>
@@ -1859,9 +1859,9 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Sidebar Section */}
-                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
-                    <div className="w-8 h-8 rounded-lg bg-[#EC4899]/15 flex items-center justify-center border border-[#EC4899]/20">
+                <div className="bg-theme-bg-primary rounded-xl p-5 border border-theme-border transition-all shadow-sm">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border">
+                    <div className="w-8 h-8 rounded-lg bg-[#EC4899]/15 flex items-center justify-center">
                       <Palette className="w-4 h-4 text-[#EC4899]" />
                     </div>
                     <h3 className="text-base font-semibold text-theme-text-primary">Sidebar</h3>
@@ -1883,9 +1883,9 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-theme-bg-secondary/40 rounded-lg p-5 border border-theme-border/40 hover:border-gray-600/60 transition-all">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border/40">
-                    <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 flex items-center justify-center border border-[#10B981]/20">
+                <div className="bg-theme-bg-primary rounded-xl p-5 border border-theme-border transition-all shadow-sm">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-theme-border">
+                    <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 flex items-center justify-center">
                       <PlusCircle className="w-4 h-4 text-[#10B981]" />
                     </div>
                     <h3 className="text-base font-semibold text-theme-text-primary">Actions</h3>
