@@ -139,9 +139,9 @@ function parseInlineMarkdown(text: string): TextSegment[] {
         isImage: true,
       });
     } else if (match[8] && match[9]) {
-      // [text](url) - link - show both text and URL
+      // [text](url) - link - show just the link text (no URL in parentheses)
       segments.push({
-        text: `${match[8]} (${match[9]})`,
+        text: match[8].trim(), // Trim any extra spaces
         bold: false,
         italic: false,
         code: false,
@@ -435,6 +435,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
               italic: segment.italic,
               code: segment.code,
               strikethrough: segment.strikethrough,
+              link: segment.link, // Preserve link property
             });
             currentLineWidth += fitWidth;
             
@@ -458,6 +459,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
             italic: segment.italic,
             code: segment.code,
             strikethrough: segment.strikethrough,
+            link: segment.link, // Preserve link property
           });
           currentLineWidth += wordWidth;
         }
@@ -489,20 +491,6 @@ export async function exportToPDF(title: string, content: string, filename?: str
         const width = pdf.getTextWidth(segment.text);
         pdf.setFillColor(240, 240, 240);
         pdf.rect(x - 0.5, y - fontSize * 0.25, width + 1, fontSize * 0.35, 'F');
-      } else if (segment.link) {
-        // Links are bright blue, bold, and underlined for maximum visibility
-        pdf.setFontSize(fontSize);
-        pdf.setTextColor(0, 85, 200); // Bright blue - very visible
-        
-        if (segment.bold && segment.italic) {
-          pdf.setFont('helvetica', 'bolditalic');
-        } else if (segment.bold) {
-          pdf.setFont('helvetica', 'bold');
-        } else if (segment.italic) {
-          pdf.setFont('helvetica', 'italic');
-        } else {
-          pdf.setFont('helvetica', 'bold'); // Make links bold by default
-        }
       } else if (segment.isImage) {
         // Images shown as gray italic text
         pdf.setFontSize(fontSize * 0.9);
@@ -510,7 +498,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
         pdf.setFont('helvetica', 'italic');
       } else {
         pdf.setFontSize(fontSize);
-        pdf.setTextColor(0, 0, 0);
+        pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
         
         if (segment.bold && segment.italic) {
           pdf.setFont('helvetica', 'bolditalic');
@@ -529,7 +517,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
       // Render text (links show URL in parentheses)
       if (segment.link) {
         // Set color and font right before rendering to ensure it's applied
-        pdf.setTextColor(0, 85, 200); // Bright blue - very visible
+        pdf.setTextColor(80, 120, 160); // Muted blue-gray - less prominent
         if (segment.bold && segment.italic) {
           pdf.setFont('helvetica', 'bolditalic');
         } else if (segment.bold) {
@@ -537,7 +525,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
         } else if (segment.italic) {
           pdf.setFont('helvetica', 'italic');
         } else {
-          pdf.setFont('helvetica', 'bold'); // Make links bold by default
+          pdf.setFont('helvetica', 'normal'); // Links not bold by default
         }
         
         // Render text with blue color first
@@ -547,10 +535,10 @@ export async function exportToPDF(title: string, content: string, filename?: str
         const textHeight = fontSize * 0.35277778;
         pdf.link(x, y - textHeight, width, textHeight, { url: segment.link });
         
-        // Add prominent underline to make links clearly visible
+        // Add subtle underline
         // In jsPDF, y is the baseline, so underline should be slightly below
-        pdf.setDrawColor(0, 85, 200); // Bright blue to match link color
-        pdf.setLineWidth(0.6); // Thicker underline for better visibility
+        pdf.setDrawColor(80, 120, 160); // Muted blue-gray to match link color
+        pdf.setLineWidth(0.3); // Thinner underline for subtlety
         const underlineY = y + 1.5; // Position underline below baseline
         pdf.line(x, underlineY, x + width, underlineY);
       } else {
@@ -585,20 +573,52 @@ export async function exportToPDF(title: string, content: string, filename?: str
         pdf.rect(x - 0.5, y - fontSize * 0.25, width + 1, fontSize * 0.35, 'F');
       } else {
         pdf.setFontSize(fontSize);
-        pdf.setTextColor(110, 110, 110); // Lighter gray for quote text
         
-        if (segment.bold && segment.italic) {
-          pdf.setFont('helvetica', 'bolditalic');
-        } else if (segment.bold) {
-          pdf.setFont('helvetica', 'bold');
+        // Handle links in quotes - make them blue but not bold
+        if (segment.link) {
+          pdf.setTextColor(80, 120, 160); // Muted blue-gray for links
+          if (segment.bold && segment.italic) {
+            pdf.setFont('helvetica', 'bolditalic');
+          } else if (segment.bold) {
+            pdf.setFont('helvetica', 'bold');
+          } else if (segment.italic) {
+            pdf.setFont('helvetica', 'italic'); // Just italic for link in quote
+          } else {
+            pdf.setFont('helvetica', 'normal'); // Links not bold by default
+          }
         } else {
-          pdf.setFont('helvetica', 'italic'); // Quotes are italic
+          pdf.setTextColor(110, 110, 110); // Lighter gray for quote text
+          
+          if (segment.bold && segment.italic) {
+            pdf.setFont('helvetica', 'bolditalic');
+          } else if (segment.bold) {
+            pdf.setFont('helvetica', 'bold');
+          } else {
+            pdf.setFont('helvetica', 'italic'); // Quotes are italic
+          }
         }
       }
       
       // Render text
       const width = pdf.getTextWidth(segment.text);
-      pdf.text(segment.text, x, y);
+      
+      // Render text (links show URL in parentheses)
+      if (segment.link) {
+        // Render text with blue color first
+        pdf.text(segment.text, x, y);
+        
+        // Then add the clickable link area on top
+        const textHeight = fontSize * 0.35277778;
+        pdf.link(x, y - textHeight, width, textHeight, { url: segment.link });
+        
+        // Add subtle underline
+        pdf.setDrawColor(80, 120, 160); // Muted blue-gray to match link color
+        pdf.setLineWidth(0.3); // Thinner underline for subtlety
+        const underlineY = y + 1.5; // Position underline below baseline
+        pdf.line(x, underlineY, x + width, underlineY);
+      } else {
+        pdf.text(segment.text, x, y);
+      }
       
       // Add strikethrough if needed
       if (segment.strikethrough) {
@@ -612,7 +632,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
   };
 
   // Add title
-  addText(title || 'Untitled', 24, 'bold', [0, 0, 0], 0, 0);
+  addText(title || 'Untitled', 24, 'bold', [40, 40, 40], 0, 0);
 
   // Reduce space before the line
   currentY -= 6;
@@ -883,6 +903,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
                 italic: true, // Force italic for quotes
                 code: segment.code,
                 strikethrough: segment.strikethrough,
+                link: segment.link, // Preserve link property
               });
               currentLineWidth += fitWidth;
               
@@ -903,6 +924,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
               italic: true, // Force italic for quotes
               code: segment.code,
               strikethrough: segment.strikethrough,
+              link: segment.link, // Preserve link property
             });
             currentLineWidth += wordWidth;
           }
@@ -1125,6 +1147,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
                 italic: segment.italic,
                 code: segment.code,
                 strikethrough: segment.strikethrough,
+                link: segment.link, // Preserve link property
               });
               currentLineWidth += fitWidth;
               
@@ -1145,6 +1168,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
               italic: segment.italic,
               code: segment.code,
               strikethrough: segment.strikethrough,
+              link: segment.link, // Preserve link property
             });
             currentLineWidth += wordWidth;
           }
@@ -1177,7 +1201,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
       // Draw number
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(0, 0, 0);
+      pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
       pdf.text(`${number}.`, numberX, currentY);
       
       // Render text with inline formatting - ALL lines aligned to textX
@@ -1236,6 +1260,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
                 italic: segment.italic,
                 code: segment.code,
                 strikethrough: segment.strikethrough,
+                link: segment.link, // Preserve link property
               });
               currentLineWidth += fitWidth;
               
@@ -1256,6 +1281,7 @@ export async function exportToPDF(title: string, content: string, filename?: str
               italic: segment.italic,
               code: segment.code,
               strikethrough: segment.strikethrough,
+              link: segment.link, // Preserve link property
             });
             currentLineWidth += wordWidth;
           }
@@ -1334,11 +1360,11 @@ export async function exportToPDF(title: string, content: string, filename?: str
               // Set font and styling
               if (isHeader) {
                 pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(0, 0, 0);
+                pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
                 pdf.setFontSize(10);
               } else {
                 pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(0, 0, 0);
+                pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
                 pdf.setFontSize(9.5);
               }
               
