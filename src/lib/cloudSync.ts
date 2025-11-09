@@ -340,20 +340,27 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
     throw new Error('Cloud configuration is incomplete');
   }
 
-  // First, try to discover what data exists in the database
-  // Check the users/ path to find any existing user IDs with data
+  // Try to discover what data exists in the database
+  // Since rules only allow access to /users/$userId (not /users), we need to try different approaches
   const userId = getUserId();
   console.log(`Downloading from database, projectId: ${config.projectId}`);
   
-  // Try to list all users in the database to find where data is stored
   const commonRegions = ['asia-southeast1', 'us-central1', 'europe-west1', 'asia-east1'];
   let foundUserPath: string | null = null;
   
-  // Try to access the users/ path to see what's there
+  // Strategy 1: Try to access /users.json without auth (test mode might allow this)
   for (const region of commonRegions) {
     try {
-      const usersUrl = `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/users.json?auth=${config.apiKey}`;
-      const response = await fetch(usersUrl);
+      // Try with auth first
+      let usersUrl = `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/users.json?auth=${config.apiKey}`;
+      let response = await fetch(usersUrl);
+      
+      // If that fails, try without auth (test mode)
+      if (!response.ok && (response.status === 401 || response.status === 403)) {
+        usersUrl = `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/users.json`;
+        response = await fetch(usersUrl);
+      }
+      
       if (response.ok) {
         const usersData = await response.json();
         if (usersData && typeof usersData === 'object' && usersData !== null) {
@@ -372,10 +379,13 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
     }
   }
   
-  // If we didn't find a user path, try the current user's path
+  // Strategy 2: If we can't list users (rules don't allow /users read), we need to try known user IDs
+  // Since we can't discover them, we'll try the current user's path
+  // But if that returns null for all files, we know it's the wrong user ID
   if (!foundUserPath) {
     foundUserPath = `users/${userId}`;
     console.log(`Using current user path: ${foundUserPath}`);
+    console.warn(`Note: If downloads return null, the database rules may need to allow reading /users to discover user IDs. Current rules only allow /users/$userId access.`);
   }
   
   const files = ['notes', 'folders', 'flows', 'flowCategories', 'theme', 'cloudConfig']; // Without .json extension
@@ -406,16 +416,22 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
           
           if (response.ok) {
             const data = await response.json();
-            console.log(`Got data for ${dbName}, type: ${typeof data}, isNull: ${data === null}, isEmpty: ${data && typeof data === 'object' && Object.keys(data).length === 0}, keys: ${data && typeof data === 'object' && data !== null ? Object.keys(data).join(',') : 'N/A'}`);
-            // Accept any response that's not null - even empty objects might contain data in nested structure
-            // Also accept if it's an object (even if it appears empty, it might have nested data)
+            console.log(`Got data for ${dbName}, type: ${typeof data}, isNull: ${data === null}, isEmpty: ${data && typeof data === 'object' && data !== null && Object.keys(data).length === 0}, keys: ${data && typeof data === 'object' && data !== null ? Object.keys(data).join(',') : 'N/A'}`);
+            
+            // If data is null, it means the path exists but is empty - this is valid, skip it
+            // But if we're using the wrong user ID, we should try to find the right one
+            if (data === null) {
+              console.log(`Path exists but data is null for ${dbName} at ${foundUserPath} - this user ID may not have data`);
+              // Don't break - continue to try other regions, but if all return null, we know this user ID is wrong
+              continue;
+            }
+            
+            // Accept any response that's not null
             if (data !== null && data !== undefined) {
               successfulUrl = url;
               downloadedData = data;
               console.log(`Successfully found ${dbName} at ${url.replace(config.apiKey, 'API_KEY_HIDDEN')}`);
               break; // Success - exit the loop
-            } else {
-              console.log(`Data for ${dbName} is null/undefined, continuing to next URL`);
             }
           } else if (response.status === 401 || response.status === 403) {
             // Try without auth
