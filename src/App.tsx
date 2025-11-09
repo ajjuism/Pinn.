@@ -5,7 +5,7 @@ import FlowsPage from './components/FlowsPage';
 import FlowPage from './components/FlowPage';
 import NotesPage from './components/NotesPage';
 import OnboardingDialog from './components/OnboardingDialog';
-import { FileText, Folder, X, AlertCircle } from 'lucide-react';
+import { Bookmark, Folder, X, AlertCircle, Check } from 'lucide-react';
 import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess, hasValidDirectoryAccess, restoreDirectoryAccess, getFolderPath } from './lib/fileSystemStorage';
 import { initStorage, refreshStorage } from './lib/storage';
 import { initFlowStorage, refreshFlowStorage } from './lib/flowStorage';
@@ -252,33 +252,42 @@ function App() {
   // Mobile Warning Overlay - blocks all access on mobile
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-theme-bg-primary flex items-center justify-center px-4 py-8">
-        <div className="bg-theme-bg-primary rounded-xl shadow-2xl max-w-sm w-full p-6 sm:p-8 border border-theme-border text-center">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-theme-accent/10 flex items-center justify-center mx-auto mb-5 sm:mb-6 border border-theme-accent/20">
-            <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-theme-accent" />
+      <div className="min-h-screen bg-theme-bg-primary flex items-center justify-center px-5 py-6">
+        <div className="bg-theme-bg-primary rounded-2xl shadow-2xl max-w-sm w-full p-7 sm:p-8 border border-theme-border text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#e8935f] rounded-lg flex items-center justify-center mx-auto mb-6 sm:mb-7">
+            <Bookmark className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h2 className="text-lg sm:text-xl font-semibold text-theme-text-primary mb-3 sm:mb-4 leading-tight">
+          <p className="text-sm sm:text-base text-theme-text-secondary mb-3 sm:mb-4">
+            Welcome to Pinn.
+          </p>
+          <h2 className="text-xl sm:text-2xl font-semibold text-theme-text-primary mb-4 sm:mb-5 leading-tight">
             Desktop Experience Required
           </h2>
-          <p className="text-sm sm:text-base text-theme-text-secondary mb-4 sm:mb-6 leading-relaxed px-1">
+          <p className="text-sm sm:text-base text-theme-text-secondary mb-5 sm:mb-6 leading-relaxed">
             This application is optimized for desktop use. Please access it from a desktop or laptop for the best experience.
           </p>
-          <div className="space-y-2 sm:space-y-2.5 pt-3 border-t border-theme-border-light">
-            <div className="flex items-start gap-2 text-left">
-              <span className="text-theme-accent mt-0.5 flex-shrink-0">•</span>
-              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+          <div className="space-y-3.5 sm:space-y-4 pt-4 border-t border-theme-border-light">
+            <div className="flex items-start gap-3.5 text-left">
+              <div className="w-5 h-5 rounded-md bg-theme-accent/20 flex items-center justify-center mt-0.5 flex-shrink-0">
+                <Check className="w-3 h-3 text-theme-accent" />
+              </div>
+              <p className="text-sm sm:text-base text-theme-text-secondary leading-relaxed flex-1">
                 Keyboard shortcuts for navigation
               </p>
             </div>
-            <div className="flex items-start gap-2 text-left">
-              <span className="text-[#6366F1] mt-0.5 flex-shrink-0">•</span>
-              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+            <div className="flex items-start gap-3.5 text-left">
+              <div className="w-5 h-5 rounded-md bg-theme-accent/20 flex items-center justify-center mt-0.5 flex-shrink-0">
+                <Check className="w-3 h-3 text-theme-accent" />
+              </div>
+              <p className="text-sm sm:text-base text-theme-text-secondary leading-relaxed flex-1">
                 Precise mouse interactions
               </p>
             </div>
-            <div className="flex items-start gap-2 text-left">
-              <span className="text-[#6366F1] mt-0.5 flex-shrink-0">•</span>
-              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+            <div className="flex items-start gap-3.5 text-left">
+              <div className="w-5 h-5 rounded-md bg-theme-accent/20 flex items-center justify-center mt-0.5 flex-shrink-0">
+                <Check className="w-3 h-3 text-theme-accent" />
+              </div>
+              <p className="text-sm sm:text-base text-theme-text-secondary leading-relaxed flex-1">
                 Larger screen for optimal viewing
               </p>
             </div>

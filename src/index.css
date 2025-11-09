@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent white background on scroll bounce (mobile) */
+html,
+body {
+  background-color: var(--color-bg-primary, #2c3440);
+  overscroll-behavior: none;
+}
+
+#root {
+  background-color: var(--color-bg-primary, #2c3440);
+  min-height: 100vh;
+}
+
 /* Remove all default focus outlines and rings */
 *:focus,
 *:focus-visible,
