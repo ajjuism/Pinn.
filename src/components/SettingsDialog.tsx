@@ -273,6 +273,16 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
         setDownloadProgress(progress);
       });
       
+      console.log('Downloaded data:', Object.keys(data), data);
+      
+      if (Object.keys(data).length === 0) {
+        setToast({ 
+          message: 'No data found in cloud. The cloud storage appears to be empty. Make sure you have synced data from another device first.', 
+          type: 'error' 
+        });
+        return;
+      }
+      
       await saveDownloadedData(data);
       
       // Refresh storage to load the new data
@@ -286,7 +296,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
         onFolderChange();
       }
       
-      setToast({ message: 'Successfully downloaded and replaced all content!', type: 'success' });
+      setToast({ message: `Successfully downloaded and replaced ${Object.keys(data).length} file(s)!`, type: 'success' });
     } catch (error) {
       console.error('Error downloading from cloud:', error);
       setToast({ 
@@ -310,6 +320,16 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
       const data = await downloadFromCloud(cloudConfig, (progress) => {
         setDownloadProgress(Math.round(progress * 0.5)); // First 50% is downloading
       });
+
+      console.log('Downloaded data for ZIP:', Object.keys(data), data);
+
+      if (Object.keys(data).length === 0) {
+        setToast({ 
+          message: 'No data found in cloud. The cloud storage appears to be empty. Make sure you have synced data from another device first.', 
+          type: 'error' 
+        });
+        return;
+      }
 
       // Create a ZIP file containing all the JSON files
       setDownloadProgress(60);

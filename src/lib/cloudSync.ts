@@ -381,6 +381,14 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
           continue;
         }
         
+        // Debug: Log the actual data structure received
+        console.log(`Downloaded ${dbName}:`, {
+          type: typeof data,
+          hasContent: data?.content !== undefined,
+          keys: data && typeof data === 'object' ? Object.keys(data) : 'N/A',
+          sample: data && typeof data === 'object' ? JSON.stringify(data).substring(0, 200) : data
+        });
+        
         // Extract content from Realtime Database structure
         // Data might be stored as { content: ..., fileName: ..., lastUpdated: ... }
         // or directly as the content itself
@@ -406,6 +414,7 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
           if (onProgress) {
             onProgress(Math.round((downloadedCount / files.length) * 100));
           }
+          console.log(`Successfully extracted content for ${dbName}`);
         } else {
           console.warn(`File ${dbName} downloaded but content could not be extracted. Data structure:`, typeof data, data);
         }
@@ -426,6 +435,9 @@ export async function downloadFromCloud(config: CloudConfig, onProgress?: (perce
     }
   }
 
+  // Log summary of what was downloaded
+  console.log(`Download complete. Files downloaded: ${Object.keys(downloadedFiles).length}`, Object.keys(downloadedFiles));
+  
   // Return whatever files were found, even if empty
   // This allows downloading partial data or handling empty cloud storage gracefully
   return downloadedFiles;
