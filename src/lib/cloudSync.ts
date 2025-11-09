@@ -164,10 +164,49 @@ export async function uploadToCloud(config: CloudConfig, onProgress?: (percent: 
 
   // Create a timestamp for this sync
   const timestamp = new Date().toISOString();
-  // Use user-based path for now (backward compatibility with existing data)
-  // TODO: Migrate to fixed 'data' path once database rules are updated
-  const userId = getUserId();
-  const dataPath = `users/${userId}`;
+  
+  // Find the user ID that has existing data (so all devices sync to the same location)
+  // If no existing data found, use current device's user ID
+  const commonRegions = ['asia-southeast1', 'us-central1', 'europe-west1', 'asia-east1'];
+  let targetUserId: string | null = null;
+  
+  // Try to find existing user ID with data
+  for (const region of commonRegions) {
+    try {
+      // Try with auth first
+      let usersUrl = `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/users.json?auth=${config.apiKey}`;
+      let response = await fetch(usersUrl);
+      
+      // If that fails, try without auth (test mode)
+      if (!response.ok && (response.status === 401 || response.status === 403)) {
+        usersUrl = `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/users.json`;
+        response = await fetch(usersUrl);
+      }
+      
+      if (response.ok) {
+        const usersData = await response.json();
+        if (usersData && typeof usersData === 'object' && usersData !== null) {
+          const userIds = Object.keys(usersData);
+          if (userIds.length > 0) {
+            // Use the first user ID found (or you could use the one with most recent data)
+            targetUserId = userIds[0];
+            console.log(`Found existing user ID with data: ${targetUserId}, will sync to this location`);
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      continue;
+    }
+  }
+  
+  // If no existing user ID found, use current device's user ID
+  if (!targetUserId) {
+    targetUserId = getUserId();
+    console.log(`No existing data found, using current device user ID: ${targetUserId}`);
+  }
+  
+  const dataPath = `users/${targetUserId}`;
 
   // Upload each file to Realtime Database
   let uploadedCount = 0;
@@ -281,10 +320,8 @@ export async function uploadToCloud(config: CloudConfig, onProgress?: (percent: 
     }
   }
 
-  // Save sync metadata
+  // Save sync metadata (use the same targetUserId we used for uploads)
   try {
-    const userId = getUserId();
-    const dataPath = `users/${userId}`;
     const commonRegions = ['asia-southeast1', 'us-central1', 'europe-west1', 'asia-east1'];
     const metadataUrls = [
       ...commonRegions.map(region => `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/${dataPath}/_metadata.json?auth=${config.apiKey}`),
