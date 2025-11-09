@@ -650,7 +650,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             value={flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
                             onChange={(e) => handleAssignCategory(flow.id, e.target.value)}
                             title={flow.category || 'Unfiled'}
-                            className="text-sm bg-theme-bg-primary border border-theme-border rounded px-2 py-1 text-theme-text-primary max-w-[200px]"
+                            className="text-xs bg-[#2a3038]/30 border border-[#3a4048]/50 hover:border-[#3a4048] rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[200px] transition-all hover:bg-[#2a3038]/50 focus:bg-[#2a3038]/50 focus:border-[#3a4048] focus:outline-none"
                           >
                             <option value="Unfiled">Unfiled</option>
                             {categories.filter((c) => c !== 'All' && c !== 'Unfiled').map((c) => (
