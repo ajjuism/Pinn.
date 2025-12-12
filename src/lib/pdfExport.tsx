@@ -109,7 +109,9 @@ function parseInlineMarkdown(text: string): TextSegment[] {
   let currentPos = 0;
   
   // Pattern to match: **bold**, *italic*, `code`, ~~strikethrough~~, [link](url), ![image](url), [[note:id|title]]
-  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`|~~([^~]+)~~|!\[([^\]]*)\]\(([^)]+)\)|\[\[note:([^\]|]+)\|([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\))/g;
+  // Note: Bold must come before italic to avoid matching ** as two italic markers
+  // Use non-greedy matching to ensure we match the full pattern correctly
+  const pattern = /(\*\*([^*]+?)\*\*|\*([^*\s][^*]*?[^*\s])\*|\*([^*\s])\*|`([^`]+?)`|~~([^~]+?)~~|!\[([^\]]*?)\]\(([^)]+?)\)|\[\[note:([^\]|]+?)\|([^\]]+?)\]\]|\[([^\]]+?)\]\(([^)]+?)\))/g;
   
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -128,38 +130,8 @@ function parseInlineMarkdown(text: string): TextSegment[] {
     }
     
     // Determine what type of formatting this is
-    if (match[6] && match[7]) {
-      // ![alt](url) - image
-      segments.push({
-        text: `[Image: ${match[6] || 'image'}]`,
-        bold: false,
-        italic: true,
-        code: false,
-        strikethrough: false,
-        isImage: true,
-      });
-    } else if (match[8] && match[9]) {
-      // [[note:id|title]] - note reference
-      // Render as "Note referred: noteTitle " in monospace font with accent color
-      segments.push({
-        text: ` Note referred: ${match[9]} `,
-        bold: false,
-        italic: false,
-        code: false, // Don't use code styling
-        strikethrough: false,
-        link: `note:${match[8]}`, // Store note ID in link field for special rendering
-      });
-    } else if (match[10] && match[11]) {
-      // [text](url) - link - show just the link text (no URL in parentheses)
-      segments.push({
-        text: match[10].trim(), // Trim any extra spaces
-        bold: false,
-        italic: false,
-        code: false,
-        strikethrough: false,
-        link: match[11],
-      });
-    } else if (match[2]) {
+    // Check groups in order: bold, italic (multi-char), italic (single-char), code, strikethrough, image, note, link
+    if (match[2]) {
       // **bold**
       segments.push({
         text: match[2],
@@ -169,7 +141,7 @@ function parseInlineMarkdown(text: string): TextSegment[] {
         strikethrough: false,
       });
     } else if (match[3]) {
-      // *italic*
+      // *italic* (multi-character)
       segments.push({
         text: match[3],
         bold: false,
@@ -178,22 +150,62 @@ function parseInlineMarkdown(text: string): TextSegment[] {
         strikethrough: false,
       });
     } else if (match[4]) {
-      // `code`
+      // *italic* (single character)
       segments.push({
         text: match[4],
+        bold: false,
+        italic: true,
+        code: false,
+        strikethrough: false,
+      });
+    } else if (match[5]) {
+      // `code`
+      segments.push({
+        text: match[5],
         bold: false,
         italic: false,
         code: true,
         strikethrough: false,
       });
-    } else if (match[5]) {
+    } else if (match[6]) {
       // ~~strikethrough~~
       segments.push({
-        text: match[5],
+        text: match[6],
         bold: false,
         italic: false,
         code: false,
         strikethrough: true,
+      });
+    } else if (match[7] !== undefined && match[8]) {
+      // ![alt](url) - image
+      segments.push({
+        text: `[Image: ${match[7] || 'image'}]`,
+        bold: false,
+        italic: true,
+        code: false,
+        strikethrough: false,
+        isImage: true,
+      });
+    } else if (match[9] && match[10]) {
+      // [[note:id|title]] - note reference
+      // Render as "Note referred: noteTitle " in monospace font with accent color
+      segments.push({
+        text: ` Note referred: ${match[10]} `,
+        bold: false,
+        italic: false,
+        code: false, // Don't use code styling
+        strikethrough: false,
+        link: `note:${match[9]}`, // Store note ID in link field for special rendering
+      });
+    } else if (match[11] && match[12]) {
+      // [text](url) - link - show just the link text (no URL in parentheses)
+      segments.push({
+        text: match[11].trim(), // Trim any extra spaces
+        bold: false,
+        italic: false,
+        code: false,
+        strikethrough: false,
+        link: match[12],
       });
     }
     
@@ -414,8 +426,9 @@ export async function exportToPDF(title: string, content: string, filename?: str
         const word = words[w] + (w < words.length - 1 ? ' ' : '');
         const wordWidth = pdf.getTextWidth(word);
         
-        // Check if word fits on current line
-        if (currentLineWidth + wordWidth > contentWidth && lineSegments.length > 0) {
+        // Check if word fits on current line (with small buffer to prevent overlap)
+        const buffer = 0.5; // Small buffer in mm to prevent text overlap
+        if (currentLineWidth + wordWidth > contentWidth - buffer && lineSegments.length > 0) {
           // Render current line
           checkPageBreak(lineHeightMM);
           renderLineSegments(lineSegments, currentX, currentY, fontSize);
@@ -428,14 +441,15 @@ export async function exportToPDF(title: string, content: string, filename?: str
         }
         
         // If single word is too long, break it into multiple segments
-        if (wordWidth > contentWidth) {
+        if (wordWidth > contentWidth - buffer) {
           let remainingWord = word;
           while (remainingWord.length > 0) {
             let fitText = remainingWord;
             let fitWidth = pdf.getTextWidth(fitText);
             
-            // Find the maximum length that fits
-            while (fitWidth > contentWidth - currentLineWidth && fitText.length > 1) {
+            // Find the maximum length that fits (with buffer)
+            const buffer = 0.5;
+            while (fitWidth > contentWidth - currentLineWidth - buffer && fitText.length > 1) {
               fitText = fitText.substring(0, fitText.length - 1);
               fitWidth = pdf.getTextWidth(fitText);
             }
@@ -1147,13 +1161,48 @@ export async function exportToPDF(title: string, content: string, filename?: str
       
       checkPageBreak(6);
       
-      const bulletX = config.marginLeft + (indent * 2);
-      const textX = bulletX + 10; // Text starts here - same as numbered lists
-      const maxTextWidth = contentWidth - (indent * 2) - 10;
+      const isMainBullet = indent === 0;
       
-      // Draw bullet (positioned to visually align with where "1." would be)
-      pdf.setFillColor(0, 0, 0);
-      pdf.circle(bulletX + 1.5, currentY - 1.2, 0.9, 'F');
+      // Calculate text position: ensure it's always to the right of the bullet with proper spacing
+      const bulletToTextSpacing = 10; // Space from bullet center to text start
+      const mainBulletTextX = config.marginLeft + bulletToTextSpacing;
+      
+      // Calculate character width to position sub-bullet at second character of main bullet text
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      const charWidth = pdf.getTextWidth('M'); // Use 'M' as a representative character width
+      
+      let bulletX: number;
+      let textX: number;
+      
+      if (isMainBullet) {
+        // Main bullet: positioned at standard location
+        bulletX = config.marginLeft;
+        textX = mainBulletTextX;
+      } else {
+        // Sub bullet: positioned where the second character of main bullet text would be
+        bulletX = mainBulletTextX + charWidth - 1.5; // Subtract 1.5 to center the bullet circle
+        // Sub-bullet text spacing should match main bullet spacing
+        // Main bullet: center at (bulletX + 1.5), text at (bulletX + 10), so spacing = 10 - 1.5 = 8.5mm
+        // Sub bullet: center at (bulletX + 1.5), text should be at (bulletX + 1.5) + 8.5 = bulletX + 10
+        textX = bulletX + 8;
+      }
+      
+      const maxTextWidth = contentWidth - (textX - config.marginLeft);
+      
+      // Draw bullet with different styles based on indentation level
+      const bulletY = currentY - 1.2;
+      
+      if (isMainBullet) {
+        // Main bullet: filled circle
+        pdf.setFillColor(0, 0, 0);
+        pdf.circle(bulletX + 1.5, bulletY, 0.9, 'F');
+      } else {
+        // Sub bullet: hollow circle (smaller), positioned at second character of main bullet text
+        pdf.setDrawColor(100, 100, 100);
+        pdf.setLineWidth(0.3);
+        pdf.circle(bulletX + 1.5, bulletY, 0.6, 'S');
+      }
       
       // Render text with inline formatting - ALL lines aligned to textX
       const segments = parseInlineMarkdown(text);
@@ -1400,60 +1449,454 @@ export async function exportToPDF(title: string, content: string, filename?: str
           
           const numCols = Math.max(...rows.map(r => r.length));
           const colWidth = contentWidth / numCols;
+          const cellPadding = 4;
+          const maxCellWidth = colWidth - (cellPadding * 2);
+          
+          // First pass: calculate wrapped text for all cells and determine row heights
+          // Store parsed segments for each cell to support markdown formatting
+          const cellSegments: TextSegment[][][] = [];
+          const rowHeights: number[] = [];
+          // Map original row index to processed row index (to handle skipped separator row)
+          const rowIndexMap: number[] = [];
+          let processedRowIndex = 0;
           
           pdf.setFontSize(10);
           
           for (let r = 0; r < rows.length; r++) {
             const row = rows[r];
             
-            // Skip separator row
+            // Skip separator row - don't process it at all
             if (r === 1 && row[0]?.match(/^[-:]+$/)) {
+              // Don't add anything for separator row - mark as -1 to indicate skip
+              rowIndexMap[r] = -1;
               continue;
             }
             
+            // Map this row to the processed index
+            rowIndexMap[r] = processedRowIndex;
+            processedRowIndex++;
+            
             const isHeader = r === 0;
-            const rowHeight = 8; // Slightly taller rows for better readability
+            const fontSize = isHeader ? 10 : 9.5;
+            pdf.setFontSize(fontSize);
+            
+            let maxLinesInRow = 1;
+            
+            // Parse and wrap text for each cell
+            const rowCellSegments: TextSegment[][] = [];
+            for (let c = 0; c < numCols; c++) {
+              let cellText = row[c] || '';
+              
+              // Handle <br> tags - convert to line breaks for proper rendering
+              cellText = cellText.replace(/<br\s*\/?>/gi, '\n');
+              
+              // Replace rupee symbol with "Rs." for reliable rendering (jsPDF Unicode support can be inconsistent)
+              // This ensures the currency symbol always renders correctly
+              cellText = cellText.replace(/₹/g, 'Rs. ');
+              
+              // Preprocess price ranges: ensure proper spacing for wrapping
+              // "Rs. 12,000-Rs. 14,000" -> "Rs. 12,000 - Rs. 14,000" (with spaces around dash)
+              cellText = cellText.replace(/(Rs\.\s*[\d,]+)\s*-\s*(Rs\.\s*[\d,]+)/g, '$1 - $2');
+              
+              // Parse markdown formatting
+              const segments = parseInlineMarkdown(cellText);
+              
+              // Calculate wrapped lines for this cell
+              const cellWrappedLines: TextSegment[] = [];
+              let currentLineSegments: TextSegment[] = [];
+              let currentLineWidth = 0;
+              
+              for (const segment of segments) {
+                // Set font for width measurement
+                if (segment.code) {
+                  pdf.setFont('courier', 'normal');
+                  pdf.setFontSize(fontSize * 0.9);
+                } else if (segment.bold && segment.italic) {
+                  pdf.setFont('helvetica', 'bolditalic');
+                  pdf.setFontSize(fontSize);
+                } else if (segment.bold) {
+                  pdf.setFont('helvetica', 'bold');
+                  pdf.setFontSize(fontSize);
+                } else if (segment.italic) {
+                  pdf.setFont('helvetica', 'italic');
+                  pdf.setFontSize(fontSize);
+                } else {
+                  pdf.setFont('helvetica', 'normal');
+                  pdf.setFontSize(fontSize);
+                }
+                
+                // Handle newlines in text (from <br> tags)
+                const textLines = segment.text.split('\n');
+                for (let lineIdx = 0; lineIdx < textLines.length; lineIdx++) {
+                  // If not the first line, add a line break marker
+                  if (lineIdx > 0 && currentLineSegments.length > 0) {
+                    cellWrappedLines.push(...currentLineSegments, { text: '', bold: false, italic: false, code: false, strikethrough: false });
+                    currentLineSegments = [];
+                    currentLineWidth = 0;
+                  }
+                  
+                  // Split line into words for wrapping
+                  // Preprocess to ensure price ranges are properly split
+                  let textToSplit = textLines[lineIdx];
+                  // Ensure price ranges have spaces: "Rs. 12,000-Rs. 14,000" -> "Rs. 12,000 - Rs. 14,000"
+                  textToSplit = textToSplit.replace(/(Rs\.\s*[\d,]+)\s*-\s*(Rs\.\s*[\d,]+)/g, '$1 - $2');
+                  // Split on spaces, but preserve multiple spaces as single space
+                  const words = textToSplit.split(/\s+/).filter(w => w.length > 0);
+                
+                for (let w = 0; w < words.length; w++) {
+                  const word = words[w] + (w < words.length - 1 ? ' ' : '');
+                  
+                  // Ensure font is set correctly before measuring (important for currency symbols)
+                  if (segment.code) {
+                    pdf.setFont('courier', 'normal');
+                    pdf.setFontSize(fontSize * 0.9);
+                  } else if (segment.bold && segment.italic) {
+                    pdf.setFont('helvetica', 'bolditalic');
+                    pdf.setFontSize(fontSize);
+                  } else if (segment.bold) {
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(fontSize);
+                  } else if (segment.italic) {
+                    pdf.setFont('helvetica', 'italic');
+                    pdf.setFontSize(fontSize);
+                  } else {
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(fontSize);
+                  }
+                  
+                  const wordWidth = pdf.getTextWidth(word);
+                  
+                  // Check if word fits on current line (with larger buffer to prevent overlap)
+                  // Use larger buffer for price ranges and currency symbols
+                  const buffer = 2.0; // Increased buffer for table cells to prevent overlaps, especially for currency symbols
+                  if (currentLineWidth + wordWidth > maxCellWidth - buffer && currentLineSegments.length > 0) {
+                    // Store current line and start new line
+                    cellWrappedLines.push(...currentLineSegments, { text: '', bold: false, italic: false, code: false, strikethrough: false }); // Line break marker
+                    currentLineSegments = [];
+                    currentLineWidth = 0;
+                  }
+                  
+                  // If single word is too long, break it (including price ranges)
+                  // Special handling for price ranges: try to break at dash or space if possible
+                  if (wordWidth > maxCellWidth - buffer) {
+                    // Check if it's a price range (contains dash and currency symbol)
+                    // Match patterns like "Rs. 12,000 - Rs. 14,000" or "Rs. 12,000-Rs. 14,000"
+                    const priceRangeMatch = word.match(/^(Rs\.\s*[\d,]+)(\s*-\s*)(Rs\.\s*[\d,]+)$/);
+                    if (priceRangeMatch && currentLineSegments.length === 0) {
+                      // Try to split price range at the dash
+                      const beforeDash = priceRangeMatch[1].trim();
+                      const dashPart = priceRangeMatch[2];
+                      const afterDash = priceRangeMatch[3].trim();
+                      
+                      // Ensure correct font is set for measurement
+                      if (segment.code) {
+                        pdf.setFont('courier', 'normal');
+                        pdf.setFontSize(fontSize * 0.9);
+                      } else if (segment.bold && segment.italic) {
+                        pdf.setFont('helvetica', 'bolditalic');
+                        pdf.setFontSize(fontSize);
+                      } else if (segment.bold) {
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(fontSize);
+                      } else if (segment.italic) {
+                        pdf.setFont('helvetica', 'italic');
+                        pdf.setFontSize(fontSize);
+                      } else {
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(fontSize);
+                      }
+                      
+                      const beforeWidth = pdf.getTextWidth(beforeDash);
+                      const dashWidth = pdf.getTextWidth(dashPart);
+                      
+                      if (beforeWidth + dashWidth <= maxCellWidth - buffer) {
+                        // First part with dash fits, add it
+                        currentLineSegments.push({
+                          text: beforeDash + dashPart,
+                          bold: segment.bold,
+                          italic: segment.italic,
+                          code: segment.code,
+                          strikethrough: segment.strikethrough,
+                          link: segment.link,
+                        });
+                        currentLineWidth = beforeWidth + dashWidth;
+                        
+                        // Add after dash to next line
+                        cellWrappedLines.push(...currentLineSegments, { text: '', bold: false, italic: false, code: false, strikethrough: false });
+                        currentLineSegments = [{
+                          text: afterDash + (w < words.length - 1 ? ' ' : ''),
+                          bold: segment.bold,
+                          italic: segment.italic,
+                          code: segment.code,
+                          strikethrough: segment.strikethrough,
+                          link: segment.link,
+                        }];
+                        currentLineWidth = pdf.getTextWidth(afterDash + (w < words.length - 1 ? ' ' : ''));
+                        continue;
+                      }
+                    }
+                    let remainingWord = word;
+                    while (remainingWord.length > 0) {
+                      let fitText = remainingWord;
+                      
+                      // Ensure correct font is set for measurement (important for currency symbols)
+                      if (segment.code) {
+                        pdf.setFont('courier', 'normal');
+                        pdf.setFontSize(fontSize * 0.9);
+                      } else if (segment.bold && segment.italic) {
+                        pdf.setFont('helvetica', 'bolditalic');
+                        pdf.setFontSize(fontSize);
+                      } else if (segment.bold) {
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(fontSize);
+                      } else if (segment.italic) {
+                        pdf.setFont('helvetica', 'italic');
+                        pdf.setFontSize(fontSize);
+                      } else {
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(fontSize);
+                      }
+                      
+                      let fitWidth = pdf.getTextWidth(fitText);
+                      
+                      while (fitWidth > maxCellWidth - currentLineWidth - buffer && fitText.length > 1) {
+                        fitText = fitText.substring(0, fitText.length - 1);
+                        fitWidth = pdf.getTextWidth(fitText);
+                      }
+                      
+                      currentLineSegments.push({
+                        text: fitText,
+                        bold: segment.bold,
+                        italic: segment.italic,
+                        code: segment.code,
+                        strikethrough: segment.strikethrough,
+                        link: segment.link,
+                      });
+                      currentLineWidth += fitWidth;
+                      
+                      remainingWord = remainingWord.substring(fitText.length);
+                      
+                      if (remainingWord.length > 0) {
+                        cellWrappedLines.push(...currentLineSegments, { text: '', bold: false, italic: false, code: false, strikethrough: false }); // Line break marker
+                        currentLineSegments = [];
+                        currentLineWidth = 0;
+                      }
+                    }
+                  } else {
+                    // Add word to current line
+                    currentLineSegments.push({
+                      text: word,
+                      bold: segment.bold,
+                      italic: segment.italic,
+                      code: segment.code,
+                      strikethrough: segment.strikethrough,
+                      link: segment.link,
+                    });
+                    currentLineWidth += wordWidth;
+                  }
+                }
+                }
+              }
+              
+              // Add remaining segments
+              if (currentLineSegments.length > 0) {
+                cellWrappedLines.push(...currentLineSegments);
+              }
+              
+              // Count lines (separated by empty text segments used as line break markers)
+              let lineCount = 1;
+              for (const seg of cellWrappedLines) {
+                if (seg.text === '' && !seg.bold && !seg.italic && !seg.code && !seg.strikethrough && !seg.link) {
+                  lineCount++;
+                }
+              }
+              
+              if (lineCount > maxLinesInRow) {
+                maxLinesInRow = lineCount;
+              }
+              
+              rowCellSegments.push(cellWrappedLines);
+            }
+            cellSegments.push(rowCellSegments);
+            
+            // Calculate row height based on max lines
+            const lineHeightMM = fontSize * 0.35277778 * config.lineHeight;
+            const minRowHeight = 6;
+            const calculatedHeight = Math.max(minRowHeight, maxLinesInRow * lineHeightMM + (cellPadding * 2));
+            rowHeights.push(calculatedHeight);
+          }
+          
+          // Second pass: render the table with proper wrapping and formatting
+          for (let r = 0; r < rows.length; r++) {
+            // Skip separator row entirely (don't render it)
+            if (r === 1 && rows[r][0]?.match(/^[-:]+$/)) {
+              continue;
+            }
+            
+            // Get the processed row index (accounts for skipped separator row)
+            const processedIdx = rowIndexMap[r];
+            if (processedIdx === undefined || processedIdx === -1) {
+              continue; // Skip if not mapped or marked as skip
+            }
+            
+            const isHeader = r === 0;
+            const rowHeight = rowHeights[processedIdx];
+            const fontSize = isHeader ? 10 : 9.5;
             
             checkPageBreak(rowHeight + 2);
             
-            // Draw cells (no background colors)
+            const rowStartY = currentY;
+            
+            // Draw cells with wrapped and formatted text
             for (let c = 0; c < numCols; c++) {
               const cellX = config.marginLeft + (c * colWidth);
-              const cellText = row[c] || '';
+              const cellSegs = cellSegments[processedIdx][c] || [];
               
-              // Set font and styling
+              // Render formatted text segments
+              const lineHeightMM = fontSize * 0.35277778 * config.lineHeight;
+              let cellY = currentY + cellPadding;
+              
               if (isHeader) {
-                pdf.setFont('helvetica', 'bold');
-                pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
-                pdf.setFontSize(10);
-              } else {
-                pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
-                pdf.setFontSize(9.5);
-              }
-              
-              // Truncate text if too long
-              const maxWidth = colWidth - 8; // More padding
-              let displayText = cellText;
-              if (pdf.getTextWidth(cellText) > maxWidth) {
-                while (pdf.getTextWidth(displayText + '...') > maxWidth && displayText.length > 0) {
-                  displayText = displayText.slice(0, -1);
+                // For header cells: center each line separately
+                // Group segments by lines (separated by line break markers)
+                const lines: TextSegment[][] = [];
+                let currentLine: TextSegment[] = [];
+                
+                for (const segment of cellSegs) {
+                  if (segment.text === '' && !segment.bold && !segment.italic && !segment.code && !segment.strikethrough && !segment.link) {
+                    // Line break marker - save current line and start new one
+                    if (currentLine.length > 0) {
+                      lines.push(currentLine);
+                    }
+                    currentLine = [];
+                  } else {
+                    currentLine.push(segment);
+                  }
                 }
-                displayText += '...';
+                // Add last line if it has content
+                if (currentLine.length > 0) {
+                  lines.push(currentLine);
+                }
+                
+                // Render each line centered
+                let lineY = cellY;
+                for (const lineSegments of lines) {
+                  // Calculate total width of this line
+                  let lineWidth = 0;
+                  pdf.setFontSize(fontSize);
+                  pdf.setFont('helvetica', 'bold');
+                  
+                  for (const seg of lineSegments) {
+                    lineWidth += pdf.getTextWidth(seg.text);
+                  }
+                  
+                  // Center the line within the cell (with padding)
+                  const availableWidth = colWidth - (cellPadding * 2);
+                  const centeredX = cellX + cellPadding + (availableWidth - lineWidth) / 2;
+                  
+                  // Ensure it doesn't go outside cell bounds
+                  const safeX = Math.max(cellX + cellPadding, Math.min(centeredX, cellX + colWidth - lineWidth - cellPadding));
+                  let x = safeX;
+                  
+                  // Render segments for this line
+                  for (const segment of lineSegments) {
+                    // Set font and styling (force bold for headers)
+                    pdf.setFontSize(fontSize);
+                    pdf.setTextColor(40, 40, 40);
+                    pdf.setFont('helvetica', 'bold');
+                    
+                    // Render text (currency symbols already replaced with "Rs. " for reliability)
+                    const width = pdf.getTextWidth(segment.text);
+                    pdf.text(segment.text, x, lineY);
+                    
+                    // Handle links
+                    if (segment.link && !segment.link.startsWith('note:')) {
+                      const textHeight = fontSize * 0.35277778;
+                      pdf.link(x, lineY - textHeight, width, textHeight, { url: segment.link });
+                      pdf.setDrawColor(80, 120, 160);
+                      pdf.setLineWidth(0.3);
+                      pdf.line(x, lineY + 1.5, x + width, lineY + 1.5);
+                    }
+                    
+                    x += width;
+                  }
+                  
+                  // Move to next line
+                  lineY += lineHeightMM;
+                }
+              } else {
+                // Regular cells: left-aligned with proper spacing
+                let x = cellX + cellPadding;
+                
+                for (const segment of cellSegs) {
+                  // Check for line break marker
+                  if (segment.text === '' && !segment.bold && !segment.italic && !segment.code && !segment.strikethrough && !segment.link) {
+                    cellY += lineHeightMM;
+                    x = cellX + cellPadding;
+                    continue;
+                  }
+                  
+                  // Set font and styling
+                  if (segment.code) {
+                    pdf.setFont('courier', 'normal');
+                    pdf.setFontSize(fontSize * 0.9);
+                    pdf.setTextColor(60, 60, 60);
+                    
+                    // Draw background for inline code
+                    const width = pdf.getTextWidth(segment.text);
+                    pdf.setFillColor(240, 240, 240);
+                    pdf.rect(x - 0.5, cellY - fontSize * 0.25, width + 1, fontSize * 0.35, 'F');
+                    pdf.text(segment.text, x, cellY);
+                    x += width;
+                  } else {
+                    pdf.setFontSize(fontSize);
+                    pdf.setTextColor(40, 40, 40);
+                    
+                    if (segment.bold && segment.italic) {
+                      pdf.setFont('helvetica', 'bolditalic');
+                    } else if (segment.bold) {
+                      pdf.setFont('helvetica', 'bold');
+                    } else if (segment.italic) {
+                      pdf.setFont('helvetica', 'italic');
+                    } else {
+                      pdf.setFont('helvetica', 'normal');
+                    }
+                    
+                    // Render text (currency symbols already replaced with "Rs. " for reliability)
+                    const width = pdf.getTextWidth(segment.text);
+                    pdf.text(segment.text, x, cellY);
+                    
+                    // Handle links
+                    if (segment.link && !segment.link.startsWith('note:')) {
+                      const textHeight = fontSize * 0.35277778;
+                      pdf.link(x, cellY - textHeight, width, textHeight, { url: segment.link });
+                      pdf.setDrawColor(80, 120, 160);
+                      pdf.setLineWidth(0.3);
+                      pdf.line(x, cellY + 1.5, x + width, cellY + 1.5);
+                    }
+                    
+                    // Add strikethrough if needed
+                    if (segment.strikethrough) {
+                      pdf.setDrawColor(0, 0, 0);
+                      pdf.setLineWidth(0.2);
+                      pdf.line(x, cellY - fontSize * 0.15, x + width, cellY - fontSize * 0.15);
+                    }
+                    
+                    x += width;
+                  }
+                }
               }
-              
-              pdf.text(displayText, cellX + 4, currentY);
               
               // Draw cell borders - lighter borders throughout
               pdf.setDrawColor(230, 230, 230); // Very light gray
               pdf.setLineWidth(0.2);
-              pdf.rect(cellX, currentY - 5, colWidth, rowHeight);
+              pdf.rect(cellX, rowStartY, colWidth, rowHeight);
             }
             
             // Draw outer border for the entire table
             pdf.setDrawColor(220, 220, 220); // Light gray
             pdf.setLineWidth(0.3);
-            pdf.rect(config.marginLeft, currentY - 5, contentWidth, rowHeight, 'S');
+            pdf.rect(config.marginLeft, rowStartY, contentWidth, rowHeight, 'S');
             
             currentY += rowHeight;
           }
