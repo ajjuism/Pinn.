@@ -8,6 +8,7 @@ import { refreshFlowStorage } from '../lib/flowStorage';
 import { getTheme, saveTheme, applyTheme, Theme } from '../lib/themeStorage';
 import { getCloudConfig, saveCloudConfig, clearCloudConfig, uploadToCloud, downloadFromCloud, saveDownloadedData, validateCloudConfig, CloudConfig } from '../lib/cloudSync';
 import Toast from './Toast';
+import SyncSelectionDialog from './SyncSelectionDialog';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
   const [showDocsDialog, setShowDocsDialog] = useState(false);
   const [expandedTroubleshooting, setExpandedTroubleshooting] = useState<string | null>(null);
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [showSyncSelectionDialog, setShowSyncSelectionDialog] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -226,9 +228,20 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
 
   if (!isOpen) return null;
 
-  const handleSyncToCloud = async () => {
+  const handleSyncToCloud = () => {
     if (!cloudConfig.enabled || !cloudConfig.apiKey || !cloudConfig.projectId) {
       setToast({ message: 'Please configure cloud sync first', type: 'error' });
+      return;
+    }
+
+    // Show selection dialog first
+    setShowSyncSelectionDialog(true);
+  };
+
+  const handleSyncSelected = async (selectedNotes: string[], selectedFlows: string[]) => {
+    // Check if at least one item is selected
+    if (selectedNotes.length === 0 && selectedFlows.length === 0) {
+      setToast({ message: 'Please select at least one note or flow to sync', type: 'error' });
       return;
     }
 
@@ -236,11 +249,26 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
     setSyncProgress(0);
 
     try {
-      await uploadToCloud(cloudConfig, (progress) => {
-        setSyncProgress(progress);
-      });
+      await uploadToCloud(
+        cloudConfig, 
+        (progress) => {
+          setSyncProgress(progress);
+        },
+        selectedNotes, // Always pass the array (even if empty) to indicate user selection
+        selectedFlows  // Always pass the array (even if empty) to indicate user selection
+      );
       
-      setToast({ message: 'Successfully synced to cloud!', type: 'success' });
+      const noteCount = selectedNotes.length;
+      const flowCount = selectedFlows.length;
+      const itemCount = noteCount + flowCount;
+      const items = [];
+      if (noteCount > 0) items.push(`${noteCount} note${noteCount !== 1 ? 's' : ''}`);
+      if (flowCount > 0) items.push(`${flowCount} flow${flowCount !== 1 ? 's' : ''}`);
+      
+      setToast({ 
+        message: `Successfully synced ${items.join(' and ')} to cloud!`, 
+        type: 'success' 
+      });
     } catch (error) {
       console.error('Error syncing to cloud:', error);
       setToast({ 
@@ -1055,6 +1083,13 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
           </div>
         </div>
       )}
+
+      {/* Sync Selection Dialog */}
+      <SyncSelectionDialog
+        isOpen={showSyncSelectionDialog}
+        onClose={() => setShowSyncSelectionDialog(false)}
+        onConfirm={handleSyncSelected}
+      />
 
       {/* Documentation Dialog */}
       {showDocsDialog && (

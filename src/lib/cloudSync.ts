@@ -102,8 +102,10 @@ export async function clearCloudConfig(): Promise<void> {
 
 /**
  * Get all data files that need to be synced
+ * @param selectedNoteIds Optional array of note IDs to include. If not provided, all notes are included.
+ * @param selectedFlowIds Optional array of flow IDs to include. If not provided, all flows are included.
  */
-async function getAllDataFiles(): Promise<{ name: string; content: string }[]> {
+async function getAllDataFiles(selectedNoteIds?: string[], selectedFlowIds?: string[]): Promise<{ name: string; content: string }[]> {
   const files = ['notes.json', 'folders.json', 'flows.json', 'flowCategories.json', 'theme.json', 'cloudConfig.json'];
   const dataFiles: { name: string; content: string }[] = [];
 
@@ -116,9 +118,44 @@ async function getAllDataFiles(): Promise<{ name: string; content: string }[]> {
     const themeData = localStorage.getItem('pinn.theme');
     const cloudConfigData = localStorage.getItem('pinn.cloudConfig');
 
-    if (notesData) dataFiles.push({ name: 'notes.json', content: notesData });
+    // Filter notes if selection is provided
+    if (notesData) {
+      let notesContent = notesData;
+      if (selectedNoteIds !== undefined) {
+        try {
+          const notes = JSON.parse(notesData);
+          if (Array.isArray(notes)) {
+            // If array is provided (even if empty), filter to only selected notes
+            const filteredNotes = notes.filter((note: any) => selectedNoteIds.includes(note.id));
+            notesContent = JSON.stringify(filteredNotes);
+          }
+        } catch (e) {
+          console.warn('Error filtering notes:', e);
+        }
+      }
+      dataFiles.push({ name: 'notes.json', content: notesContent });
+    }
+
     if (foldersData) dataFiles.push({ name: 'folders.json', content: foldersData });
-    if (flowsData) dataFiles.push({ name: 'flows.json', content: flowsData });
+    
+    // Filter flows if selection is provided
+    if (flowsData) {
+      let flowsContent = flowsData;
+      if (selectedFlowIds !== undefined) {
+        try {
+          const flows = JSON.parse(flowsData);
+          if (Array.isArray(flows)) {
+            // If array is provided (even if empty), filter to only selected flows
+            const filteredFlows = flows.filter((flow: any) => selectedFlowIds.includes(flow.id));
+            flowsContent = JSON.stringify(filteredFlows);
+          }
+        } catch (e) {
+          console.warn('Error filtering flows:', e);
+        }
+      }
+      dataFiles.push({ name: 'flows.json', content: flowsContent });
+    }
+    
     if (categoriesData) dataFiles.push({ name: 'flowCategories.json', content: categoriesData });
     if (themeData) dataFiles.push({ name: 'theme.json', content: themeData });
     if (cloudConfigData) dataFiles.push({ name: 'cloudConfig.json', content: cloudConfigData });
@@ -135,7 +172,37 @@ async function getAllDataFiles(): Promise<{ name: string; content: string }[]> {
       const file = await fileHandle.getFile();
       const text = await file.text();
       if (text.trim()) {
-        dataFiles.push({ name: fileName, content: text });
+        let content = text;
+        
+        // Filter notes if selection is provided
+        if (fileName === 'notes.json' && selectedNoteIds !== undefined) {
+          try {
+            const notes = JSON.parse(text);
+            if (Array.isArray(notes)) {
+              // If array is provided (even if empty), filter to only selected notes
+              const filteredNotes = notes.filter((note: any) => selectedNoteIds.includes(note.id));
+              content = JSON.stringify(filteredNotes);
+            }
+          } catch (e) {
+            console.warn('Error filtering notes:', e);
+          }
+        }
+        
+        // Filter flows if selection is provided
+        if (fileName === 'flows.json' && selectedFlowIds !== undefined) {
+          try {
+            const flows = JSON.parse(text);
+            if (Array.isArray(flows)) {
+              // If array is provided (even if empty), filter to only selected flows
+              const filteredFlows = flows.filter((flow: any) => selectedFlowIds.includes(flow.id));
+              content = JSON.stringify(filteredFlows);
+            }
+          } catch (e) {
+            console.warn('Error filtering flows:', e);
+          }
+        }
+        
+        dataFiles.push({ name: fileName, content });
       }
     } catch (error: any) {
       if (error.name !== 'NotFoundError') {
@@ -149,14 +216,23 @@ async function getAllDataFiles(): Promise<{ name: string; content: string }[]> {
 
 /**
  * Upload data to Firebase Realtime Database
+ * @param config Cloud configuration
+ * @param onProgress Optional progress callback
+ * @param selectedNoteIds Optional array of note IDs to sync. If not provided, all notes are synced.
+ * @param selectedFlowIds Optional array of flow IDs to sync. If not provided, all flows are synced.
  */
-export async function uploadToCloud(config: CloudConfig, onProgress?: (percent: number) => void): Promise<void> {
+export async function uploadToCloud(
+  config: CloudConfig, 
+  onProgress?: (percent: number) => void,
+  selectedNoteIds?: string[],
+  selectedFlowIds?: string[]
+): Promise<void> {
   if (!config.apiKey || !config.projectId) {
     throw new Error('Cloud configuration is incomplete');
   }
 
-  // Get all data files
-  const dataFiles = await getAllDataFiles();
+  // Get all data files (filtered if selections provided)
+  const dataFiles = await getAllDataFiles(selectedNoteIds, selectedFlowIds);
   
   if (dataFiles.length === 0) {
     throw new Error('No data to sync');
