@@ -1,0 +1,14 @@
+# Example Nginx configuration for SPA routing
+# Place this in your Nginx server block
+
+server {
+    listen 80;
+    server_name pinn.pxl8.studio;
+    root /path/to/your/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+

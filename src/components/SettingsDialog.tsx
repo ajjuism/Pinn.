@@ -1249,17 +1249,17 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
 
               <div className="space-y-3">
                 <button
-                  onClick={handleDownloadReplace}
-                  className="w-full p-4 bg-theme-bg-darkest border-2 border-theme-border hover:border-red-500/50 rounded-lg transition-all text-left group"
+                  onClick={handleDownloadMerge}
+                  className="w-full p-4 bg-theme-bg-darkest border-2 border-theme-border hover:border-green-500/50 rounded-lg transition-all text-left group"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/30 transition-colors">
-                      <AlertCircle className="w-4 h-4 text-red-400" />
+                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/30 transition-colors">
+                      <GitMerge className="w-4 h-4 text-green-400" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-theme-text-primary mb-1">Replace All Content</div>
+                      <div className="font-medium text-theme-text-primary mb-1">Merge Selected Docs</div>
                       <div className="text-xs text-theme-text-secondary">
-                        Downloads and immediately replaces all your current notes, flows, and settings. This action cannot be undone.
+                        Merges selected notes and flows with your local data. Updates existing items and adds new ones without removing anything.
                       </div>
                     </div>
                   </div>
@@ -1283,17 +1283,17 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
                 </button>
 
                 <button
-                  onClick={handleDownloadMerge}
-                  className="w-full p-4 bg-theme-bg-darkest border-2 border-theme-border hover:border-green-500/50 rounded-lg transition-all text-left group"
+                  onClick={handleDownloadReplace}
+                  className="w-full p-4 bg-theme-bg-darkest border-2 border-theme-border hover:border-red-500/50 rounded-lg transition-all text-left group"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/30 transition-colors">
-                      <GitMerge className="w-4 h-4 text-green-400" />
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/30 transition-colors">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-theme-text-primary mb-1">Merge Selected Docs</div>
+                      <div className="font-medium text-theme-text-primary mb-1">Replace All Content</div>
                       <div className="text-xs text-theme-text-secondary">
-                        Merges selected notes and flows with your local data. Updates existing items and adds new ones without removing anything.
+                        Downloads and immediately replaces all your current notes, flows, and settings. This action cannot be undone.
                       </div>
                     </div>
                   </div>
