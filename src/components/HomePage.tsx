@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles, Settings } from 'lucide-react';
+import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles, Settings, Network } from 'lucide-react';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
 import { getFlows, Flow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 import Toast from './Toast';
 import SettingsDialog from './SettingsDialog';
+import GraphViewDialog from './GraphViewDialog';
 import JSZip from 'jszip';
 
 interface HomePageProps {
@@ -26,6 +27,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   const [menuOpen, setMenuOpen] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showGraphView, setShowGraphView] = useState(false);
   const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
     isOpen: false,
     message: '',
@@ -568,9 +570,19 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
         )}
       </main>
 
+      {/* Graph View Button */}
+      <button
+        onClick={() => setShowGraphView(true)}
+        className="fixed bottom-24 right-8 w-14 h-14 bg-[#e8935f] hover:bg-[#d8834f] rounded-full flex items-center justify-center shadow-lg transition-colors z-40"
+        title="Graph View"
+      >
+        <Network className="w-6 h-6 text-white" />
+      </button>
+
+      {/* Add Note Button */}
       <button
         onClick={handleNewNote}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors"
+        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors z-40"
       >
         <Plus className="w-6 h-6 text-white" />
       </button>
@@ -594,6 +606,12 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
       <SettingsDialog
         isOpen={showSettingsDialog}
         onClose={() => setShowSettingsDialog(false)}
+      />
+
+      <GraphViewDialog
+        isOpen={showGraphView}
+        onClose={() => setShowGraphView(false)}
+        onNavigateToNote={onNavigateToEditor}
       />
     </div>
   );
