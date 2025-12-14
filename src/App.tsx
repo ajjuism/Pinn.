@@ -28,6 +28,10 @@ function App() {
     
     if (path.startsWith('/note/')) {
       const noteId = path.split('/note/')[1];
+      // Handle /note/new as a new note (editor view with null noteId)
+      if (noteId === 'new') {
+        return { view: 'editor' as const, noteId: null };
+      }
       return { view: 'editor' as const, noteId };
     } else if (path === '/notes') {
       return { view: 'notes' as const, noteId: null };
@@ -211,7 +215,8 @@ function App() {
     if (noteId) {
       window.history.pushState({}, '', `/note/${noteId}`);
     } else {
-      window.history.pushState({}, '', '/');
+      // Use /note/new for new notes to distinguish from home page
+      window.history.pushState({}, '', '/note/new');
     }
   };
 
