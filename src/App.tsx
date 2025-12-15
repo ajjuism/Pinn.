@@ -64,7 +64,7 @@ function App() {
     return { view: 'notfound' as const, noteId: null, flowId: null };
   };
 
-  // Handle browser back/forward navigation
+  // Handle browser back/forward navigation and initial URL parsing
   useEffect(() => {
     const handlePopState = () => {
       const { view, noteId, flowId } = parseURL();
@@ -74,19 +74,23 @@ function App() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    
-    // Parse initial URL
-    const { view, noteId, flowId } = parseURL();
-    if (view !== 'home' || noteId) {
-      setCurrentView(view);
-      setCurrentNoteId(noteId || null);
-      setCurrentFlowId(flowId || null);
-    }
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  // Parse initial URL after storage is initialized
+  useEffect(() => {
+    if (!isInitializing) {
+      const { view, noteId, flowId } = parseURL();
+      if (view !== 'home' || noteId || flowId) {
+        setCurrentView(view);
+        setCurrentNoteId(noteId || null);
+        setCurrentFlowId(flowId || null);
+      }
+    }
+  }, [isInitializing]);
 
   // Detect mobile devices
   useEffect(() => {

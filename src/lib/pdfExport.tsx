@@ -227,67 +227,17 @@ function parseInlineMarkdown(text: string): TextSegment[] {
     currentPos = match.index + match[0].length;
   }
   
-  // Add any remaining text - check if it contains tags
+  // Add any remaining text
   if (currentPos < text.length) {
     const remainingText = text.substring(currentPos);
     if (remainingText) {
-      // Check if remaining text contains tags that weren't matched
-      const tagPattern = /(#[\w_]+)/g;
-      let tagMatch: RegExpExecArray | null;
-      let lastTagPos = 0;
-      
-      while ((tagMatch = tagPattern.exec(remainingText)) !== null) {
-        // Add text before tag
-        if (tagMatch.index > lastTagPos) {
-          const textBefore = remainingText.substring(lastTagPos, tagMatch.index);
-          if (textBefore) {
-            segments.push({
-              text: textBefore,
-              bold: false,
-              italic: false,
-              code: false,
-              strikethrough: false,
-            });
-          }
-        }
-        
-        // Add tag
-        segments.push({
-          text: tagMatch[0],
-          bold: false,
-          italic: false,
-          code: false,
-          strikethrough: false,
-          isTag: true,
-        });
-        
-        lastTagPos = tagMatch.index + tagMatch[0].length;
-      }
-      
-      // Add remaining text after last tag
-      if (lastTagPos < remainingText.length) {
-        const textAfter = remainingText.substring(lastTagPos);
-        if (textAfter) {
-          segments.push({
-            text: textAfter,
-            bold: false,
-            italic: false,
-            code: false,
-            strikethrough: false,
-          });
-        }
-      }
-      
-      // If no tags found, add as plain text
-      if (lastTagPos === 0) {
-        segments.push({
-          text: remainingText,
-          bold: false,
-          italic: false,
-          code: false,
-          strikethrough: false,
-        });
-      }
+      segments.push({
+        text: remainingText,
+        bold: false,
+        italic: false,
+        code: false,
+        strikethrough: false,
+      });
     }
   }
   
@@ -610,11 +560,33 @@ export async function exportToPDF(title: string, content: string, filename?: str
           width = pdf.getTextWidth(segment.text);
           pdf.setFillColor(240, 240, 240);
           pdf.rect(x - 0.5, y - fontSize * 0.25, width + 1, fontSize * 0.35, 'F');
+          pdf.text(segment.text, x, y);
+          
+          // Add strikethrough if needed
+          if (segment.strikethrough) {
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.2);
+            pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
+          }
+          
+          x += width;
         } else if (segment.isImage) {
           // Images shown as gray italic text
           pdf.setFontSize(fontSize * 0.9);
           pdf.setTextColor(100, 100, 100);
           pdf.setFont('helvetica', 'italic');
+          
+          width = pdf.getTextWidth(segment.text);
+          pdf.text(segment.text, x, y);
+          
+          // Add strikethrough if needed
+          if (segment.strikethrough) {
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.2);
+            pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
+          }
+          
+          x += width;
         } else {
           pdf.setFontSize(fontSize);
           pdf.setTextColor(40, 40, 40); // Dark gray instead of pure black
@@ -628,66 +600,78 @@ export async function exportToPDF(title: string, content: string, filename?: str
           } else {
             pdf.setFont('helvetica', 'normal');
           }
-        }
-        
-        // Regular rendering for non-tag segments
-        width = pdf.getTextWidth(segment.text);
-        
-        // Render text (links show URL in parentheses)
-        if (segment.link && segment.link.startsWith('note:')) {
-          // Note reference: use monospace font and accent color
-          pdf.setFont('courier', 'normal');
-          pdf.setTextColor(232, 147, 95); // Accent color
-          pdf.setFontSize(fontSize * 0.95); // Slightly smaller for monospace
           
-          pdf.text(segment.text, x, y);
+          // Regular rendering for non-tag segments
+          width = pdf.getTextWidth(segment.text);
           
-          // Add strikethrough if needed
-          if (segment.strikethrough) {
-            pdf.setDrawColor(0, 0, 0);
-            pdf.setLineWidth(0.2);
-            pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
-          }
-          
-          x += width;
-        } else if (segment.link) {
-          // Regular link
-          pdf.setTextColor(80, 120, 160); // Muted blue-gray for regular links
-          
-          if (segment.bold && segment.italic) {
-            pdf.setFont('helvetica', 'bolditalic');
-          } else if (segment.bold) {
-            pdf.setFont('helvetica', 'bold');
-          } else if (segment.italic) {
-            pdf.setFont('helvetica', 'italic');
+          // Render text (links show URL in parentheses)
+          if (segment.link && segment.link.startsWith('note:')) {
+            // Note reference: use monospace font and accent color
+            pdf.setFont('courier', 'normal');
+            pdf.setTextColor(232, 147, 95); // Accent color
+            pdf.setFontSize(fontSize * 0.95); // Slightly smaller for monospace
+            
+            width = pdf.getTextWidth(segment.text);
+            pdf.text(segment.text, x, y);
+            
+            // Add strikethrough if needed
+            if (segment.strikethrough) {
+              pdf.setDrawColor(0, 0, 0);
+              pdf.setLineWidth(0.2);
+              pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
+            }
+            
+            x += width;
+          } else if (segment.link) {
+            // Regular link
+            pdf.setTextColor(80, 120, 160); // Muted blue-gray for regular links
+            
+            if (segment.bold && segment.italic) {
+              pdf.setFont('helvetica', 'bolditalic');
+            } else if (segment.bold) {
+              pdf.setFont('helvetica', 'bold');
+            } else if (segment.italic) {
+              pdf.setFont('helvetica', 'italic');
+            } else {
+              pdf.setFont('helvetica', 'normal');
+            }
+            
+            width = pdf.getTextWidth(segment.text);
+            
+            // Render text
+            pdf.text(segment.text, x, y);
+            
+            // Add clickable area and underline
+            const textHeight = fontSize * 0.35277778;
+            pdf.link(x, y - textHeight, width, textHeight, { url: segment.link });
+            
+            // Add subtle underline
+            pdf.setDrawColor(80, 120, 160); // Muted blue-gray to match link color
+            pdf.setLineWidth(0.3); // Thinner underline for subtlety
+            const underlineY = y + 1.5; // Position underline below baseline
+            pdf.line(x, underlineY, x + width, underlineY);
+            
+            // Add strikethrough if needed
+            if (segment.strikethrough) {
+              pdf.setDrawColor(0, 0, 0);
+              pdf.setLineWidth(0.2);
+              pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
+            }
+            
+            x += width;
           } else {
-            pdf.setFont('helvetica', 'normal');
+            pdf.text(segment.text, x, y);
+            
+            // Add strikethrough if needed
+            if (segment.strikethrough) {
+              pdf.setDrawColor(0, 0, 0);
+              pdf.setLineWidth(0.2);
+              pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
+            }
+            
+            x += width;
           }
-          
-          // Render text
-          pdf.text(segment.text, x, y);
-          
-          // Add clickable area and underline
-          const textHeight = fontSize * 0.35277778;
-          pdf.link(x, y - textHeight, width, textHeight, { url: segment.link });
-          
-          // Add subtle underline
-          pdf.setDrawColor(80, 120, 160); // Muted blue-gray to match link color
-          pdf.setLineWidth(0.3); // Thinner underline for subtlety
-          const underlineY = y + 1.5; // Position underline below baseline
-          pdf.line(x, underlineY, x + width, underlineY);
-        } else {
-          pdf.text(segment.text, x, y);
         }
-        
-        // Add strikethrough if needed
-        if (segment.strikethrough) {
-          pdf.setDrawColor(0, 0, 0);
-          pdf.setLineWidth(0.2);
-          pdf.line(x, y - fontSize * 0.15, x + width, y - fontSize * 0.15);
-        }
-        
-        x += width;
       }
     }
   };
