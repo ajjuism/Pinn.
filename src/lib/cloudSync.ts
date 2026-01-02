@@ -102,12 +102,114 @@ export async function clearCloudConfig(): Promise<void> {
 }
 
 /**
+ * Sync state interface
+ */
+interface SyncState {
+  timestamp: string;
+  syncedNoteIds: string[];
+  syncedFlowIds: string[];
+}
+
+const SYNC_STATE_KEY = 'pinn.lastSyncState';
+
+/**
+ * Get last sync state from localStorage
+ */
+function getLastSyncState(): SyncState | null {
+  try {
+    const stored = localStorage.getItem(SYNC_STATE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    logger.error('Error reading last sync state:', error);
+  }
+  return null;
+}
+
+/**
+ * Save sync state to localStorage
+ */
+function saveLastSyncState(state: SyncState): void {
+  try {
+    localStorage.setItem(SYNC_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    logger.error('Error saving last sync state:', error);
+  }
+}
+
+
+/**
+ * Calculate size of JSON string in bytes
+ */
+function getJsonSize(jsonString: string): number {
+  return new Blob([jsonString]).size;
+}
+
+/**
+ * Split array into chunks based on maximum size (in bytes)
+ * @param array Array to chunk
+ * @param maxSizeBytes Maximum size per chunk in bytes
+ * @returns Array of chunks
+ */
+function chunkArray<T>(array: T[], maxSizeBytes: number): T[][] {
+  const chunks: T[][] = [];
+  let currentChunk: T[] = [];
+  let currentSize = 0;
+  
+  for (const item of array) {
+    const itemJson = JSON.stringify(item);
+    const itemSize = new Blob([itemJson]).size;
+    
+    // If single item exceeds max size, include it anyway (will need to be handled separately)
+    if (itemSize > maxSizeBytes) {
+      logger.warn(`Item size (${itemSize} bytes) exceeds chunk size limit (${maxSizeBytes} bytes)`);
+    }
+    
+    // Check if adding this item would exceed the limit
+    if (currentSize + itemSize > maxSizeBytes && currentChunk.length > 0) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentSize = 0;
+    }
+    
+    currentChunk.push(item);
+    currentSize += itemSize;
+  }
+  
+  // Add remaining chunk
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+  
+  return chunks;
+}
+
+/**
+ * Chunk size limit: 200MB (safe margin under 256MB Realtime Database limit)
+ */
+const CHUNK_SIZE_LIMIT_BYTES = 200 * 1024 * 1024; // 200MB
+const TARGET_CHUNK_SIZE_BYTES = 150 * 1024 * 1024; // 150MB per chunk
+
+/**
+ * Data file interface with optional chunking info
+ */
+interface DataFile {
+  name: string;
+  content: string;
+  isChunked?: boolean;
+  chunkIndex?: number;
+  totalChunks?: number;
+}
+
+/**
  * Get all data files that need to be synced
  * @param selectedNoteIds Optional array of note IDs to include. If not provided, all notes are included.
  * @param selectedFlowIds Optional array of flow IDs to include. If not provided, all flows are included.
+ * @returns Array of data files, with chunked files if needed
  */
-async function getAllDataFiles(selectedNoteIds?: string[], selectedFlowIds?: string[]): Promise<{ name: string; content: string }[]> {
-  const dataFiles: { name: string; content: string }[] = [];
+async function getAllDataFiles(selectedNoteIds?: string[], selectedFlowIds?: string[]): Promise<DataFile[]> {
+  const dataFiles: DataFile[] = [];
 
   if (!isFolderConfigured() || !hasDirectoryAccess()) {
     // Read from localStorage (fallback)
@@ -165,14 +267,48 @@ async function getAllDataFiles(selectedNoteIds?: string[], selectedFlowIds?: str
   try {
     // Read notes from new structure
     const { readAllNotesFromDirectory } = await import('./fileSystemStorage');
-    const allNotes = await readAllNotesFromDirectory();
+    const allNotes = await readAllNotesFromDirectory(true); // Load full content for sync
     
     let notesToSync = allNotes;
-    if (selectedNoteIds !== undefined) {
+    
+    // Apply incremental sync filter if no specific selection and last sync exists
+    const lastSync = getLastSyncState();
+    if (lastSync && selectedNoteIds === undefined) {
+      // Only sync notes that are new or have been updated since last sync
+      notesToSync = allNotes.filter((note: any) => {
+        const wasSynced = lastSync.syncedNoteIds.includes(note.id);
+        const noteUpdated = new Date(note.updated_at);
+        const lastSyncTime = new Date(lastSync.timestamp);
+        // Include if: not synced before OR updated after last sync
+        return !wasSynced || noteUpdated > lastSyncTime;
+      });
+      logger.log(`Incremental sync: ${notesToSync.length} of ${allNotes.length} notes changed since last sync`);
+    } else if (selectedNoteIds !== undefined) {
+      // Respect explicit selection
       notesToSync = allNotes.filter((note: any) => selectedNoteIds.includes(note.id));
     }
     
-    dataFiles.push({ name: 'notes.json', content: JSON.stringify(notesToSync) });
+    // Check if chunking is needed for notes
+    const notesJson = JSON.stringify(notesToSync);
+    const notesSize = getJsonSize(notesJson);
+    
+    if (notesSize > CHUNK_SIZE_LIMIT_BYTES) {
+      // Split into chunks
+      const chunks = chunkArray(notesToSync, TARGET_CHUNK_SIZE_BYTES);
+      logger.log(`Notes size (${(notesSize / (1024 * 1024)).toFixed(2)}MB) exceeds limit, splitting into ${chunks.length} chunks`);
+      
+      chunks.forEach((chunk, index) => {
+        dataFiles.push({
+          name: `notes_${index}.json`,
+          content: JSON.stringify(chunk),
+          isChunked: true,
+          chunkIndex: index,
+          totalChunks: chunks.length,
+        });
+      });
+    } else {
+      dataFiles.push({ name: 'notes.json', content: notesJson });
+    }
   } catch (error) {
     logger.warn('Error reading notes for cloud sync:', error);
   }
@@ -183,11 +319,45 @@ async function getAllDataFiles(selectedNoteIds?: string[], selectedFlowIds?: str
     const allFlows = await readAllFlowsFromDirectory();
     
     let flowsToSync = allFlows;
-    if (selectedFlowIds !== undefined) {
+    
+    // Apply incremental sync filter if no specific selection and last sync exists
+    const lastSync = getLastSyncState();
+    if (lastSync && selectedFlowIds === undefined) {
+      // Only sync flows that are new or have been updated since last sync
+      flowsToSync = allFlows.filter((flow: any) => {
+        const wasSynced = lastSync.syncedFlowIds.includes(flow.id);
+        const flowUpdated = flow.updated_at ? new Date(flow.updated_at) : new Date(0);
+        const lastSyncTime = new Date(lastSync.timestamp);
+        // Include if: not synced before OR updated after last sync
+        return !wasSynced || flowUpdated > lastSyncTime;
+      });
+      logger.log(`Incremental sync: ${flowsToSync.length} of ${allFlows.length} flows changed since last sync`);
+    } else if (selectedFlowIds !== undefined) {
+      // Respect explicit selection
       flowsToSync = allFlows.filter((flow: any) => selectedFlowIds.includes(flow.id));
     }
     
-    dataFiles.push({ name: 'flows.json', content: JSON.stringify(flowsToSync) });
+    // Check if chunking is needed for flows
+    const flowsJson = JSON.stringify(flowsToSync);
+    const flowsSize = getJsonSize(flowsJson);
+    
+    if (flowsSize > CHUNK_SIZE_LIMIT_BYTES) {
+      // Split into chunks
+      const chunks = chunkArray(flowsToSync, TARGET_CHUNK_SIZE_BYTES);
+      logger.log(`Flows size (${(flowsSize / (1024 * 1024)).toFixed(2)}MB) exceeds limit, splitting into ${chunks.length} chunks`);
+      
+      chunks.forEach((chunk, index) => {
+        dataFiles.push({
+          name: `flows_${index}.json`,
+          content: JSON.stringify(chunk),
+          isChunked: true,
+          chunkIndex: index,
+          totalChunks: chunks.length,
+        });
+      });
+    } else {
+      dataFiles.push({ name: 'flows.json', content: flowsJson });
+    }
   } catch (error) {
     logger.warn('Error reading flows for cloud sync:', error);
   }
@@ -423,15 +593,62 @@ export async function uploadToCloud(
     throw new Error('No data to sync');
   }
 
-  // Merge notes - always merge to preserve existing notes in cloud
-  const notesFile = dataFiles.find(f => f.name === 'notes.json');
-  if (notesFile) {
+  // Merge notes - handle both chunked and non-chunked formats
+  const notesChunksToMerge = dataFiles.filter(f => f.name.startsWith('notes_') && f.name.endsWith('.json'));
+  const notesFileToMerge = dataFiles.find(f => f.name === 'notes.json');
+  
+  if (notesChunksToMerge.length > 0) {
+    // Handle chunked notes
     try {
-      const localNotes = JSON.parse(notesFile.content);
+      // Collect all local notes from chunks
+      const localNotes: any[] = [];
+      notesChunksToMerge.forEach(chunk => {
+        const chunkNotes = JSON.parse(chunk.content);
+        if (Array.isArray(chunkNotes)) {
+          localNotes.push(...chunkNotes);
+        }
+      });
+      
+      // Merge with existing notes
+      const mergedNotes = mergeItemsById(existingNotes, localNotes);
+      
+      // Update chunks with merged data (re-chunk if needed)
+      const mergedJson = JSON.stringify(mergedNotes);
+      const mergedSize = getJsonSize(mergedJson);
+      
+      if (mergedSize > CHUNK_SIZE_LIMIT_BYTES) {
+        // Re-chunk merged data
+        const chunks = chunkArray(mergedNotes, TARGET_CHUNK_SIZE_BYTES);
+        // Remove old chunks
+        dataFiles.splice(dataFiles.findIndex(f => f.name.startsWith('notes_')), notesChunksToMerge.length);
+        // Add new chunks
+        chunks.forEach((chunk, index) => {
+          dataFiles.push({
+            name: `notes_${index}.json`,
+            content: JSON.stringify(chunk),
+            isChunked: true,
+            chunkIndex: index,
+            totalChunks: chunks.length,
+          });
+        });
+      } else {
+        // Convert back to single file
+        dataFiles.splice(dataFiles.findIndex(f => f.name.startsWith('notes_')), notesChunksToMerge.length);
+        dataFiles.push({ name: 'notes.json', content: mergedJson });
+      }
+      
+      logger.log(`Merged notes: ${existingNotes.length} existing + ${localNotes.length} local = ${mergedNotes.length} total`);
+    } catch (e) {
+      logger.warn('Error merging chunked notes:', e);
+    }
+  } else if (notesFileToMerge) {
+    // Handle non-chunked notes
+    try {
+      const localNotes = JSON.parse(notesFileToMerge.content);
       if (Array.isArray(localNotes)) {
         // Merge: update existing notes and add new ones, but keep all existing notes
         const mergedNotes = mergeItemsById(existingNotes, localNotes);
-        notesFile.content = JSON.stringify(mergedNotes);
+        notesFileToMerge.content = JSON.stringify(mergedNotes);
         logger.log(`Merged notes: ${existingNotes.length} existing + ${localNotes.length} local = ${mergedNotes.length} total`);
       }
     } catch (e) {
@@ -442,15 +659,62 @@ export async function uploadToCloud(
     dataFiles.push({ name: 'notes.json', content: JSON.stringify(existingNotes) });
   }
 
-  // Merge flows - always merge to preserve existing flows in cloud
-  const flowsFile = dataFiles.find(f => f.name === 'flows.json');
-  if (flowsFile) {
+  // Merge flows - handle both chunked and non-chunked formats
+  const flowsChunksToMerge = dataFiles.filter(f => f.name.startsWith('flows_') && f.name.endsWith('.json'));
+  const flowsFileToMerge = dataFiles.find(f => f.name === 'flows.json');
+  
+  if (flowsChunksToMerge.length > 0) {
+    // Handle chunked flows
     try {
-      const localFlows = JSON.parse(flowsFile.content);
+      // Collect all local flows from chunks
+      const localFlows: any[] = [];
+      flowsChunksToMerge.forEach(chunk => {
+        const chunkFlows = JSON.parse(chunk.content);
+        if (Array.isArray(chunkFlows)) {
+          localFlows.push(...chunkFlows);
+        }
+      });
+      
+      // Merge with existing flows
+      const mergedFlows = mergeItemsById(existingFlows, localFlows);
+      
+      // Update chunks with merged data (re-chunk if needed)
+      const mergedJson = JSON.stringify(mergedFlows);
+      const mergedSize = getJsonSize(mergedJson);
+      
+      if (mergedSize > CHUNK_SIZE_LIMIT_BYTES) {
+        // Re-chunk merged data
+        const chunks = chunkArray(mergedFlows, TARGET_CHUNK_SIZE_BYTES);
+        // Remove old chunks
+        dataFiles.splice(dataFiles.findIndex(f => f.name.startsWith('flows_')), flowsChunksToMerge.length);
+        // Add new chunks
+        chunks.forEach((chunk, index) => {
+          dataFiles.push({
+            name: `flows_${index}.json`,
+            content: JSON.stringify(chunk),
+            isChunked: true,
+            chunkIndex: index,
+            totalChunks: chunks.length,
+          });
+        });
+      } else {
+        // Convert back to single file
+        dataFiles.splice(dataFiles.findIndex(f => f.name.startsWith('flows_')), flowsChunksToMerge.length);
+        dataFiles.push({ name: 'flows.json', content: mergedJson });
+      }
+      
+      logger.log(`Merged flows: ${existingFlows.length} existing + ${localFlows.length} local = ${mergedFlows.length} total`);
+    } catch (e) {
+      logger.warn('Error merging chunked flows:', e);
+    }
+  } else if (flowsFileToMerge) {
+    // Handle non-chunked flows
+    try {
+      const localFlows = JSON.parse(flowsFileToMerge.content);
       if (Array.isArray(localFlows)) {
         // Merge: update existing flows and add new ones, but keep all existing flows
         const mergedFlows = mergeItemsById(existingFlows, localFlows);
-        flowsFile.content = JSON.stringify(mergedFlows);
+        flowsFileToMerge.content = JSON.stringify(mergedFlows);
         logger.log(`Merged flows: ${existingFlows.length} existing + ${localFlows.length} local = ${mergedFlows.length} total`);
       }
     } catch (e) {
@@ -616,12 +880,88 @@ export async function uploadToCloud(
     onProgress(95); // Before saving metadata
   }
 
+  // Collect chunk info and synced IDs
+  const notesChunksForMetadata = dataFiles.filter(f => f.name.startsWith('notes_') && f.name.endsWith('.json'));
+  const flowsChunksForMetadata = dataFiles.filter(f => f.name.startsWith('flows_') && f.name.endsWith('.json'));
+  const notesFileForMetadata = dataFiles.find(f => f.name === 'notes.json');
+  const flowsFileForMetadata = dataFiles.find(f => f.name === 'flows.json');
+  
+  // Collect all synced note and flow IDs
+  const syncedNoteIds: string[] = [];
+  const syncedFlowIds: string[] = [];
+  
+  if (notesChunksForMetadata.length > 0) {
+    notesChunksForMetadata.forEach(chunk => {
+      try {
+        const notes = JSON.parse(chunk.content);
+        if (Array.isArray(notes)) {
+          notes.forEach((note: any) => {
+            if (note.id) syncedNoteIds.push(note.id);
+          });
+        }
+      } catch (e) {
+        logger.warn('Error parsing notes chunk for ID collection:', e);
+      }
+    });
+  } else if (notesFileForMetadata) {
+    try {
+      const notes = JSON.parse(notesFileForMetadata.content);
+      if (Array.isArray(notes)) {
+        notes.forEach((note: any) => {
+          if (note.id) syncedNoteIds.push(note.id);
+        });
+      }
+    } catch (e) {
+      logger.warn('Error parsing notes for ID collection:', e);
+    }
+  }
+  
+  if (flowsChunksForMetadata.length > 0) {
+    flowsChunksForMetadata.forEach(chunk => {
+      try {
+        const flows = JSON.parse(chunk.content);
+        if (Array.isArray(flows)) {
+          flows.forEach((flow: any) => {
+            if (flow.id) syncedFlowIds.push(flow.id);
+          });
+        }
+      } catch (e) {
+        logger.warn('Error parsing flows chunk for ID collection:', e);
+      }
+    });
+  } else if (flowsFileForMetadata) {
+    try {
+      const flows = JSON.parse(flowsFileForMetadata.content);
+      if (Array.isArray(flows)) {
+        flows.forEach((flow: any) => {
+          if (flow.id) syncedFlowIds.push(flow.id);
+        });
+      }
+    } catch (e) {
+      logger.warn('Error parsing flows for ID collection:', e);
+    }
+  }
+
   try {
     const commonRegions = ['asia-southeast1', 'us-central1', 'europe-west1', 'asia-east1'];
     const metadataUrls = [
       ...commonRegions.map(region => `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/${dataPath}/_metadata.json?auth=${config.apiKey}`),
       `https://${config.projectId}.firebaseio.com/${dataPath}/_metadata.json?auth=${config.apiKey}`,
     ];
+    
+    const metadata = {
+      lastSync: timestamp,
+      lastSyncTimestamp: timestamp,
+      filesCount: dataFiles.length,
+      notesChunked: notesChunksForMetadata.length > 0,
+      notesChunks: notesChunksForMetadata.length > 0 ? notesChunksForMetadata.length : undefined,
+      flowsChunked: flowsChunksForMetadata.length > 0,
+      flowsChunks: flowsChunksForMetadata.length > 0 ? flowsChunksForMetadata.length : undefined,
+      syncedNoteIds: syncedNoteIds,
+      syncedFlowIds: syncedFlowIds,
+      changedNotesCount: syncedNoteIds.length,
+      changedFlowsCount: syncedFlowIds.length,
+    };
     
     for (const url of metadataUrls) {
       try {
@@ -630,10 +970,7 @@ export async function uploadToCloud(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            lastSync: timestamp,
-            filesCount: dataFiles.length,
-          }),
+          body: JSON.stringify(metadata),
         });
         
         if (response.ok) {
@@ -648,10 +985,7 @@ export async function uploadToCloud(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              lastSync: timestamp,
-              filesCount: dataFiles.length,
-            }),
+            body: JSON.stringify(metadata),
           });
           break;
         } catch {
@@ -659,6 +993,13 @@ export async function uploadToCloud(
         }
       }
     }
+    
+    // Save sync state locally after successful upload
+    saveLastSyncState({
+      timestamp,
+      syncedNoteIds,
+      syncedFlowIds,
+    });
   } catch (error) {
     logger.warn('Could not save metadata, but files were uploaded successfully');
   }
@@ -733,12 +1074,121 @@ export async function downloadFromCloud(
     logger.warn(`Note: If downloads return null, the database rules may need to allow reading /users to discover user IDs. Current rules only allow /users/$userId access.`);
   }
   
+  // First, try to download metadata to check for chunking
+  let metadata: any = null;
+  try {
+    const metadataUrls = [
+      ...commonRegions.map(region => `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/${foundUserPath}/_metadata.json?auth=${config.apiKey}`),
+      `https://${config.projectId}.firebaseio.com/${foundUserPath}/_metadata.json?auth=${config.apiKey}`,
+    ];
+    
+    for (const url of metadataUrls) {
+      try {
+        let response = await fetch(url);
+        if (!response.ok && (response.status === 401 || response.status === 403)) {
+          response = await fetch(url.replace('?auth=' + config.apiKey, ''));
+        }
+        if (response.ok) {
+          const data = await response.json();
+          if (data && typeof data === 'object' && data !== null) {
+            if (data.content !== undefined) {
+              metadata = data.content;
+            } else {
+              metadata = data;
+            }
+            break;
+          }
+        }
+      } catch {
+        continue;
+      }
+    }
+  } catch (error) {
+    logger.warn('Could not download metadata, will try to detect chunks manually:', error);
+  }
+
   const files = ['notes', 'folders', 'flows', 'flowCategories', 'theme', 'cloudConfig']; // Without .json extension
   const downloadedFiles: { [key: string]: string } = {};
   
   let downloadedCount = 0;
 
+  // Helper function to download chunks
+  const downloadChunks = async (baseName: string, chunkCount: number): Promise<string | null> => {
+    const chunks: any[] = [];
+    
+    for (let i = 0; i < chunkCount; i++) {
+      const chunkName = `${baseName}_${i}`;
+      const downloadUrls = [
+        ...commonRegions.map(region => `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/${foundUserPath}/${chunkName}.json?auth=${config.apiKey}`),
+        `https://${config.projectId}.firebaseio.com/${foundUserPath}/${chunkName}.json?auth=${config.apiKey}`,
+      ];
+      
+      let chunkData: any = null;
+      for (const url of downloadUrls) {
+        try {
+          let response = await fetch(url);
+          if (!response.ok && (response.status === 401 || response.status === 403)) {
+            response = await fetch(url.replace('?auth=' + config.apiKey, ''));
+          }
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data !== null) {
+              if (data.content !== undefined) {
+                chunkData = data.content;
+              } else {
+                chunkData = data;
+              }
+              break;
+            }
+          }
+        } catch {
+          continue;
+        }
+      }
+      
+      if (chunkData) {
+        const chunkContent = typeof chunkData === 'string' ? chunkData : JSON.stringify(chunkData);
+        try {
+          const parsed = JSON.parse(chunkContent);
+          if (Array.isArray(parsed)) {
+            chunks.push(...parsed);
+          }
+        } catch (e) {
+          logger.warn(`Error parsing chunk ${chunkName}:`, e);
+        }
+      } else {
+        logger.warn(`Could not download chunk ${chunkName}`);
+      }
+    }
+    
+    return chunks.length > 0 ? JSON.stringify(chunks) : null;
+  };
+
   for (const dbName of files) {
+    // Check if this file is chunked (notes or flows)
+    const isChunked = (dbName === 'notes' && metadata?.notesChunked) || 
+                      (dbName === 'flows' && metadata?.flowsChunked);
+    const chunkCount = dbName === 'notes' ? metadata?.notesChunks : 
+                      dbName === 'flows' ? metadata?.flowsChunks : 0;
+    
+    if (isChunked && chunkCount > 0) {
+      // Download chunks
+      logger.log(`Downloading ${chunkCount} chunks for ${dbName}`);
+      const mergedContent = await downloadChunks(dbName, chunkCount);
+      if (mergedContent) {
+        downloadedFiles[`${dbName}.json`] = mergedContent;
+        downloadedCount++;
+        if (onProgress) {
+          onProgress(Math.round((downloadedCount / files.length) * 100));
+        }
+        continue; // Skip the regular download logic
+      } else {
+        logger.warn(`Failed to download chunks for ${dbName}, falling back to single file`);
+        // Fall through to try single file
+      }
+    }
+    
+    // Regular download logic (for non-chunked files or fallback)
     try {
       // Use Firebase Realtime Database REST API
       // Try different URL formats with common regions
@@ -876,12 +1326,46 @@ export async function downloadFromCloud(
         } else {
           logger.warn(`File ${dbName} downloaded but content could not be extracted. Data structure:`, typeof data, data);
         }
-      } else if (response?.status === 404) {
-        // File doesn't exist in cloud, skip
-        logger.log(`File ${dbName} not found in Realtime Database (404)`);
-      } else if (!successfulUrl) {
-        // No successful URL found
-        logger.log(`File ${dbName} not found in Realtime Database (tried all URL formats)`);
+      } else if (response?.status === 404 || !successfulUrl) {
+        // File doesn't exist - try checking for chunks (for notes/flows only)
+        if ((dbName === 'notes' || dbName === 'flows') && !isChunked) {
+          // Try to detect chunks by attempting to download chunk 0
+          logger.log(`File ${dbName} not found, checking for chunks...`);
+          const testChunkUrl = commonRegions.map(region => 
+            `https://${config.projectId}-default-rtdb.${region}.firebasedatabase.app/${foundUserPath}/${dbName}_0.json?auth=${config.apiKey}`
+          )[0];
+          
+          try {
+            let testResponse = await fetch(testChunkUrl);
+            if (!testResponse.ok && (testResponse.status === 401 || testResponse.status === 403)) {
+              testResponse = await fetch(testChunkUrl.replace('?auth=' + config.apiKey, ''));
+            }
+            
+            if (testResponse.ok) {
+              // Chunks exist! Try to download them (we'll need to find how many)
+              // For now, try up to 10 chunks
+              logger.log(`Chunks detected for ${dbName}, attempting to download...`);
+              for (let chunkCount = 1; chunkCount <= 10; chunkCount++) {
+                const mergedContent = await downloadChunks(dbName, chunkCount);
+                if (mergedContent) {
+                  downloadedFiles[`${dbName}.json`] = mergedContent;
+                  downloadedCount++;
+                  if (onProgress) {
+                    onProgress(Math.round((downloadedCount / files.length) * 100));
+                  }
+                  logger.log(`Successfully downloaded ${chunkCount} chunks for ${dbName}`);
+                  break;
+                }
+              }
+            } else {
+              logger.log(`File ${dbName} not found in Realtime Database (404)`);
+            }
+          } catch {
+            logger.log(`File ${dbName} not found in Realtime Database (tried all URL formats)`);
+          }
+        } else {
+          logger.log(`File ${dbName} not found in Realtime Database (404)`);
+        }
       } else {
         logger.warn(`Could not download ${dbName}: ${response?.status || 'network error'}`);
       }
