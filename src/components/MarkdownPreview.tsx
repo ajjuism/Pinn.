@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -70,12 +70,6 @@ export default function MarkdownPreview({ content, onNavigateToNote }: MarkdownP
     }
   };
 
-  // Parse note references and replace with React components
-  const parseNoteReferences = (text: string): string => {
-    if (!text) return text;
-    // For now, just return the text as-is since we'll handle it in the custom renderer
-    return text;
-  };
 
   // Aggressively merge URLs into the same paragraph as surrounding text
   const preprocessContent = (text: string): string => {
@@ -145,7 +139,7 @@ export default function MarkdownPreview({ content, onNavigateToNote }: MarkdownP
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         components={{
-          text({ node, ...props }: any) {
+          text({ node }: any) {
             // Render text nodes with inline URL, note reference, and tag detection
             const text = node.value || '';
             
@@ -828,10 +822,10 @@ export default function MarkdownPreview({ content, onNavigateToNote }: MarkdownP
                     return <React.Fragment key={index}>{processCellContent(child)}</React.Fragment>;
                   }
                   // Recursively process child elements
-                  if (React.isValidElement(child) && child.props?.children) {
-                    return React.cloneElement(child, {
+                  if (React.isValidElement(child) && 'children' in (child.props as any)) {
+                    return React.cloneElement(child as React.ReactElement<any>, {
                       key: index,
-                      children: processCellContent(child.props.children)
+                      children: processCellContent((child.props as any).children)
                     });
                   }
                   return child;
@@ -873,10 +867,10 @@ export default function MarkdownPreview({ content, onNavigateToNote }: MarkdownP
                     return <React.Fragment key={index}>{processCellContent(child)}</React.Fragment>;
                   }
                   // Recursively process child elements
-                  if (React.isValidElement(child) && child.props?.children) {
-                    return React.cloneElement(child, {
+                  if (React.isValidElement(child) && 'children' in (child.props as any)) {
+                    return React.cloneElement(child as React.ReactElement<any>, {
                       key: index,
-                      children: processCellContent(child.props.children)
+                      children: processCellContent((child.props as any).children)
                     });
                   }
                   return child;

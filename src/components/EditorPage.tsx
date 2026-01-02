@@ -25,9 +25,8 @@ import {
   Book,
   Settings,
   Sparkles,
-  FileText,
 } from 'lucide-react';
-import { getNoteById, getNoteByIdWithContent, saveNote, createNote, deleteNote, getNotes, writeAll, getAllFolders, setNoteFolder } from '../lib/storage';
+import { getNoteByIdWithContent, saveNote, createNote, deleteNote, getNotes, writeAll, getAllFolders, setNoteFolder } from '../lib/storage';
 import { getFlows, createFlow, addNoteToFlow, Flow, getFlowsContainingNote } from '../lib/flowStorage';
 import MarkdownEditor from './MarkdownEditor';
 import MarkdownPreview from './MarkdownPreview';

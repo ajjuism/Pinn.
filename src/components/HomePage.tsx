@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useMemo, useCallback } from 'react';
 import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles, Settings, Network } from 'lucide-react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
@@ -11,15 +11,14 @@ import { logger } from '../utils/logger';
 import { exportNotesAsJSON, exportNotesAsMarkdown } from '../utils/export';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
+import { formatDate } from '../utils/date';
 import LoadingSpinner from './shared/LoadingSpinner';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/' });
   const [notes, setNotes] = useState<Note[]>([]);
-  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
-  const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
   const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
   const [flowSortBy, setFlowSortBy] = useState<'title' | 'date'>((search as { flowSort?: 'title' | 'date' })?.flowSort || 'date');
@@ -34,6 +33,26 @@ export default function HomePage() {
     type: 'success',
   });
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const loadNotes = useCallback(() => {
+    try {
+      const data = loadFromStorage();
+      setNotes(data || []);
+    } catch (error) {
+      logger.error('Error loading notes:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadFlows = useCallback(() => {
+    try {
+      const data = getFlows();
+      setFlows(data || []);
+    } catch (error) {
+      logger.error('Error loading flows:', error);
+    }
+  }, []);
 
   useEffect(() => {
     loadNotes();
@@ -50,7 +69,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('storage-refresh', handleStorageRefresh);
     };
-  }, []);
+  }, [loadNotes, loadFlows]);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
 
@@ -77,40 +96,9 @@ export default function HomePage() {
       search: params,
       replace: true,
     });
-  }, [debouncedSearchQuery, sortBy, flowSortBy]);
+  }, [debouncedSearchQuery, sortBy, flowSortBy, navigate]);
 
-  useEffect(() => {
-    filterAndSortNotes();
-    filterAndSortFlows();
-  }, [notes, flows, debouncedSearchQuery, sortBy, flowSortBy]);
-
-  useClickOutside(menuRef, () => {
-    if (menuOpen) {
-      setMenuOpen(false);
-    }
-  });
-
-  const loadNotes = () => {
-    try {
-      const data = loadFromStorage();
-      setNotes(data || []);
-    } catch (error) {
-      logger.error('Error loading notes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFlows = () => {
-    try {
-      const data = getFlows();
-      setFlows(data || []);
-    } catch (error) {
-      logger.error('Error loading flows:', error);
-    }
-  };
-
-  const filterAndSortNotes = () => {
+  const filteredNotes = useMemo(() => {
     let filtered = notes;
 
     if (debouncedSearchQuery) {
@@ -122,17 +110,15 @@ export default function HomePage() {
       );
     }
 
-    filtered = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       }
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
+  }, [notes, debouncedSearchQuery, sortBy]);
 
-    setFilteredNotes(filtered);
-  };
-
-  const filterAndSortFlows = () => {
+  const filteredFlows = useMemo(() => {
     let filtered = flows;
 
     if (debouncedSearchQuery) {
@@ -145,33 +131,25 @@ export default function HomePage() {
       );
     }
 
-    filtered = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (flowSortBy === 'title') {
         return a.title.localeCompare(b.title);
       }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+  }, [flows, debouncedSearchQuery, flowSortBy]);
 
-    setFilteredFlows(filtered);
-  };
+  useClickOutside(menuRef, () => {
+    if (menuOpen) {
+      setMenuOpen(false);
+    }
+  });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const handleNewNote = () => {
+  const handleNewNote = useCallback(() => {
     navigate({ to: '/note/new' });
-  };
+  }, [navigate]);
 
-  const handleExportAll = async () => {
+  const handleExportAll = useCallback(async () => {
     const allNotes = loadFromStorage();
     try {
       await exportNotesAsJSON(allNotes);
@@ -185,9 +163,9 @@ export default function HomePage() {
       });
       setMenuOpen(false);
     }
-  };
+  }, []);
 
-  const handleExportAllMarkdown = async () => {
+  const handleExportAllMarkdown = useCallback(async () => {
     const allNotes = loadFromStorage();
     try {
       await exportNotesAsMarkdown(allNotes);
@@ -201,9 +179,9 @@ export default function HomePage() {
       });
       setMenuOpen(false);
     }
-  };
+  }, []);
 
-  const handleImportNotes = () => {
+  const handleImportNotes = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -270,18 +248,17 @@ export default function HomePage() {
     };
     input.click();
     setMenuOpen(false);
-  };
+  }, [loadNotes]);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     setShowClearAllConfirm(true);
     setMenuOpen(false);
-  };
+  }, []);
 
-  const confirmClearAll = () => {
+  const confirmClearAll = useCallback(() => {
     writeAll([]);
     setNotes([]);
-    setFilteredNotes([]);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-theme-bg-primary">

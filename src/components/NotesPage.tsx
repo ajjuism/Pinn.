@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { Search, Plus, Menu as MenuIcon, Download, Upload, Trash2, ChevronLeft, GitBranch, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, Book } from 'lucide-react';
 import { getNotes, Note, deleteNote, writeAll, getAllFolders, setNoteFolder, addFolder, renameFolder as storageRenameFolder, deleteFolder as storageDeleteFolder } from '../lib/storage';
@@ -10,6 +10,7 @@ import JSZip from 'jszip';
 import { logger } from '../utils/logger';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
+import { formatDate } from '../utils/date';
 
 export default function NotesPage() {
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ export default function NotesPage() {
   const search = useSearch({ from: '/notes' });
   
   const [notes, setNotes] = useState<Note[]>([]);
-  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
   const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>((search as { dateFilter?: 'all' | 'today' | 'week' | 'month' })?.dateFilter || 'all');
@@ -46,6 +46,26 @@ export default function NotesPage() {
   });
   const menuRef = useRef<HTMLDivElement | null>(null);
 
+  const loadNotes = useCallback(() => {
+    try {
+      const data = getNotes();
+      setNotes(data || []);
+      const allFolders = getAllFolders();
+      setFolders(['All', 'Unfiled', ...allFolders]);
+      // Auto-expand folders that have notes in the current filter
+      setExpandedFolders((prev) => {
+        if (allFolders.length > 0 && prev.size === 0) {
+          return new Set(allFolders);
+        }
+        return prev;
+      });
+    } catch (error) {
+      logger.error('Error loading notes:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadNotes();
 
@@ -59,7 +79,7 @@ export default function NotesPage() {
     return () => {
       window.removeEventListener('storage-refresh', handleStorageRefresh);
     };
-  }, []);
+  }, [loadNotes]);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
 
@@ -92,34 +112,13 @@ export default function NotesPage() {
       search: params,
       replace: true,
     });
-  }, [debouncedSearchQuery, sortBy, dateFilter, tagFilter, selectedFolder]);
-
-  useEffect(() => {
-    filterAndSortNotes();
-  }, [notes, debouncedSearchQuery, sortBy, selectedFolder, dateFilter, tagFilter]);
+  }, [debouncedSearchQuery, sortBy, dateFilter, tagFilter, selectedFolder, navigate]);
 
   useClickOutside(menuRef, () => {
     if (menuOpen) {
       setMenuOpen(false);
     }
   });
-
-  const loadNotes = () => {
-    try {
-      const data = getNotes();
-      setNotes(data || []);
-      const allFolders = getAllFolders();
-      setFolders(['All', 'Unfiled', ...allFolders]);
-      // Auto-expand folders that have notes in the current filter
-      if (allFolders.length > 0 && expandedFolders.size === 0) {
-        setExpandedFolders(new Set(allFolders));
-      }
-    } catch (error) {
-      logger.error('Error loading notes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleFolder = (folderName: string) => {
     setExpandedFolders((prev) => {
@@ -137,29 +136,29 @@ export default function NotesPage() {
     setSelectedFolder(folderName);
   };
 
-  const extractTags = (text: string): string[] => {
+  const extractTags = useCallback((text: string): string[] => {
     // Match #tag patterns - word characters after #, allowing for tags at word boundaries
     const tagRegex = /#(\w+)/g;
     const matches = text.matchAll(tagRegex);
     const tags = Array.from(matches, (match) => match[1].toLowerCase());
     return [...new Set(tags)]; // Return unique tags
-  };
+  }, []);
 
-  const getAllTags = (): string[] => {
+  const getAllTags = useMemo((): string[] => {
     const allTags = new Set<string>();
     notes.forEach((note) => {
       const tags = extractTags(note.title + ' ' + note.content);
       tags.forEach((tag) => allTags.add(tag));
     });
     return Array.from(allTags).sort();
-  };
+  }, [notes, extractTags]);
 
-  const noteHasTag = (note: Note, tag: string): boolean => {
+  const noteHasTag = useCallback((note: Note, tag: string): boolean => {
     const tags = extractTags(note.title + ' ' + note.content);
     return tags.includes(tag.toLowerCase());
-  };
+  }, [extractTags]);
 
-  const organizeNotesByFolder = () => {
+  const organizeNotesByFolder = useMemo(() => {
     const organized: Record<string, Note[]> = {};
     const unfiled: Note[] = [];
 
@@ -187,9 +186,9 @@ export default function NotesPage() {
     );
 
     return { organized, unfiled };
-  };
+  }, [notes]);
 
-  const filterAndSortNotes = () => {
+  const filteredNotes = useMemo(() => {
     let filtered = notes;
 
     if (debouncedSearchQuery) {
@@ -238,29 +237,15 @@ export default function NotesPage() {
       filtered = filtered.filter((note) => noteHasTag(note, tagFilter));
     }
 
-    filtered = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       }
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
+  }, [notes, debouncedSearchQuery, selectedFolder, dateFilter, tagFilter, sortBy, noteHasTag]);
 
-    setFilteredNotes(filtered);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const handleNewNote = () => {
+  const handleNewNote = useCallback(() => {
     // Store selected folder for auto-assignment when note is created
     if (selectedFolder && selectedFolder !== 'All' && selectedFolder !== 'Unfiled') {
       localStorage.setItem('pinn.pendingFolder', selectedFolder);
@@ -268,7 +253,7 @@ export default function NotesPage() {
       localStorage.removeItem('pinn.pendingFolder');
     }
     navigate({ to: '/note/new' });
-  };
+  }, [selectedFolder, navigate]);
 
   const handleCreateFolder = () => {
     setAssignAfterCreateNoteId(null);
@@ -534,74 +519,10 @@ export default function NotesPage() {
     setMenuOpen(false);
   };
 
-  const confirmClearAll = () => {
+  const confirmClearAll = useCallback(() => {
     notes.forEach((note) => deleteNote(note.id));
     setNotes([]);
-    setFilteredNotes([]);
-  };
-
-  const getPreview = (content: string, maxLength: number = 100) => {
-    if (!content) return 'No content';
-
-    // Convert markdown to plain text more intelligently
-    let text = content;
-
-    // Handle markdown tables - extract text from table rows
-    text = text.replace(/\|(.+)\|/g, (_match, content: string) => {
-      // Skip separator rows (like |-----: |-----: |)
-      if (content.match(/^[\s-:]+$/)) return '';
-      // Extract cell contents and join with spaces
-      const cells = content.split('|').map((c: string) => c.trim()).filter((c: string) => c && !c.match(/^[-:]+$/));
-      return cells.join(' ');
-    });
-
-    // Remove markdown headers
-    text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-
-    // Remove markdown links but keep the text
-    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
-
-    // Remove markdown images but keep alt text
-    text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1');
-
-    // Remove markdown code blocks
-    text = text.replace(/```[\s\S]*?```/g, '');
-
-    // Remove inline code
-    text = text.replace(/`([^`]+)`/g, '$1');
-
-    // Remove markdown lists markers
-    text = text.replace(/^[\s]*[-*+]\s+/gm, '');
-    text = text.replace(/^[\s]*\d+\.\s+/gm, '');
-
-    // Remove markdown bold/italic markers
-    text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
-    text = text.replace(/\*([^*]+)\*/g, '$1');
-    text = text.replace(/__([^_]+)__/g, '$1');
-    text = text.replace(/_([^_]+)_/g, '$1');
-
-    // Remove markdown strikethrough
-    text = text.replace(/~~([^~]+)~~/g, '$1');
-
-    // Remove markdown blockquotes
-    text = text.replace(/^>\s+/gm, '');
-
-    // Remove horizontal rules
-    text = text.replace(/^[-*_]{3,}$/gm, '');
-
-    // Remove remaining markdown special characters (but keep pipes and colons for content)
-    // IMPORTANT: Don't remove # as we want to preserve tags
-    text = text.replace(/[`\[\]()]/g, '');
-
-    // Clean up extra whitespace
-    text = text.replace(/\n{3,}/g, '\n\n');
-    text = text.replace(/\s+/g, ' ');
-    text = text.trim();
-
-    if (!text || text.length === 0) return 'No content';
-
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-  };
+  }, [notes]);
 
   const renderPreviewWithTags = (content: string, maxLength: number = 100) => {
     if (!content) return <span className="text-gray-500">No content</span>;
@@ -718,7 +639,7 @@ export default function NotesPage() {
     );
   };
 
-  const { organized, unfiled } = organizeNotesByFolder();
+  const { organized, unfiled } = organizeNotesByFolder;
   // Include empty folders from the persisted list so they show in the sidebar
   const folderSet = new Set<string>([
     ...Object.keys(organized),
@@ -1044,7 +965,7 @@ export default function NotesPage() {
                         className="text-xs bg-theme-bg-secondary border border-theme-border rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary focus:outline-none focus:border-gray-600 transition-colors"
                       >
                         <option value="all">All Tags</option>
-                        {getAllTags().map((tag) => (
+                        {getAllTags.map((tag) => (
                           <option key={tag} value={tag}>#{tag}</option>
                         ))}
                       </select>

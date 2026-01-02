@@ -1,13 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Hook to listen for storage refresh events
  * @param onRefresh - Callback function to execute when storage is refreshed
  */
 export function useStorage(onRefresh: () => void): void {
+  const onRefreshRef = useRef(onRefresh);
+  
+  // Keep ref up to date
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
+
   useEffect(() => {
     const handleStorageRefresh = () => {
-      onRefresh();
+      onRefreshRef.current();
     };
 
     window.addEventListener('storage-refresh', handleStorageRefresh);
@@ -15,6 +22,6 @@ export function useStorage(onRefresh: () => void): void {
     return () => {
       window.removeEventListener('storage-refresh', handleStorageRefresh);
     };
-  }, [onRefresh]);
+  }, []); // Empty deps - ref is always current
 }
 

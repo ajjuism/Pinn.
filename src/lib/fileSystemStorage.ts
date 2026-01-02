@@ -346,7 +346,7 @@ export async function restoreDirectoryAccess(): Promise<boolean> {
  * @param defaultName - Suggested default directory name
  * @param allowReuse - If true and folder is configured, try to restore handle first
  */
-export async function requestDirectoryAccess(defaultName: string = 'Pinn', allowReuse: boolean = false): Promise<FileSystemDirectoryHandle | null> {
+export async function requestDirectoryAccess(_defaultName: string = 'Pinn', allowReuse: boolean = false): Promise<FileSystemDirectoryHandle | null> {
   try {
     if (!isFileSystemSupported()) {
       throw new Error('File System Access API is not supported in this browser');
@@ -581,20 +581,6 @@ async function writeJSONFile(filename: string, data: any): Promise<void> {
   }
 }
 
-/**
- * Delete a file from the directory
- */
-async function deleteFile(filename: string): Promise<void> {
-  try {
-    const handle = await ensureDirectoryAccess();
-    await handle.removeEntry(filename, { recursive: false });
-  } catch (error: any) {
-    if (error.name !== 'NotFoundError') {
-      logger.error(`Error deleting file ${filename}:`, error);
-      throw error;
-    }
-  }
-}
 
 // ============================================================================
 // NEW FILE STRUCTURE FUNCTIONS

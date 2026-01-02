@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Trash2, RotateCcw, X, Search, ChevronLeft, FileText, GitBranch, Folder, Tag, AlertCircle } from 'lucide-react';
+import { Trash2, RotateCcw, X, Search, ChevronLeft, FileText, GitBranch, Folder, Tag } from 'lucide-react';
 import {
   getTrashedNotes,
   getTrashedFlows,

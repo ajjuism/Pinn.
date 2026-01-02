@@ -6,19 +6,15 @@
 import { logger } from '../utils/logger';
 import {
   ensureDirectoryAccess,
-  getDirectoryHandle,
   isFolderConfigured,
   hasDirectoryAccess,
   readNoteFromFile,
   writeNoteToFile,
-  deleteNoteFile,
   readNotesIndex,
   writeNotesIndex,
   ensureNotesDirectory,
-  ensureNotesFolder,
   readFlowFromFile,
   writeFlowToFile,
-  deleteFlowFile,
   ensureFlowsDirectory,
 } from './fileSystemStorage';
 import { normalizeFolderPath } from './markdownUtils';
@@ -193,6 +189,9 @@ export async function moveNoteToTrash(noteId: string, originalFolder?: string): 
     await writeTrashIndex(trashIndex);
     
     // Remove from notes index
+    if (!notesIndex) {
+      throw new Error('Notes index not found');
+    }
     const updatedNotes = notesIndex.notes.filter(n => n.id !== noteId);
     await writeNotesIndex(updatedNotes);
     
@@ -406,12 +405,12 @@ export async function restoreNoteFromTrash(noteId: string): Promise<void> {
     
     // Restore to original location
     const note: Note = {
-      id: metadata.id,
-      title: metadata.title,
+      id: metadata.id || '',
+      title: metadata.title || '',
       content: content,
       folder: trashItem.originalFolder || metadata.folder,
-      created_at: metadata.created_at,
-      updated_at: metadata.updated_at,
+      created_at: metadata.created_at || new Date().toISOString(),
+      updated_at: metadata.updated_at || new Date().toISOString(),
     };
     
     await writeNoteToFile(note);

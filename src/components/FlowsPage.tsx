@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, GitBranch } from 'lucide-react';
 import { getFlows, Flow, deleteFlow, getAllCategories, setFlowCategory, addCategory, renameCategory as storageRenameCategory, deleteCategory as storageDeleteCategory } from '../lib/flowStorage';
@@ -7,6 +7,7 @@ import SettingsDialog from './SettingsDialog';
 import { logger } from '../utils/logger';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
+import { formatDate } from '../utils/date';
 
 export default function FlowsPage() {
   const navigate = useNavigate();
@@ -14,7 +15,6 @@ export default function FlowsPage() {
   const search = useSearch({ from: '/flows' });
   
   const [flows, setFlows] = useState<Flow[]>([]);
-  const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
   const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
   const [categories, setCategories] = useState<string[]>([]);
@@ -35,6 +35,26 @@ export default function FlowsPage() {
   const [showCategoryDeleteDialog, setShowCategoryDeleteDialog] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
+  const loadFlows = useCallback(() => {
+    try {
+      const data = getFlows();
+      setFlows(data || []);
+      const allCategories = getAllCategories();
+      setCategories(['All', 'Unfiled', ...allCategories]);
+      // Auto-expand categories that have flows in the current filter
+      setExpandedCategories((prev) => {
+        if (allCategories.length > 0 && prev.size === 0) {
+          return new Set(allCategories);
+        }
+        return prev;
+      });
+    } catch (error) {
+      logger.error('Error loading flows:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadFlows();
 
@@ -48,7 +68,7 @@ export default function FlowsPage() {
     return () => {
       window.removeEventListener('storage-refresh', handleStorageRefresh);
     };
-  }, []);
+  }, [loadFlows]);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
 
@@ -75,34 +95,13 @@ export default function FlowsPage() {
       search: params,
       replace: true,
     });
-  }, [debouncedSearchQuery, sortBy, selectedCategory]);
-
-  useEffect(() => {
-    filterAndSortFlows();
-  }, [flows, debouncedSearchQuery, sortBy, selectedCategory]);
+  }, [debouncedSearchQuery, sortBy, selectedCategory, navigate]);
 
   useClickOutside(menuRef, () => {
     if (menuOpen) {
       setMenuOpen(false);
     }
   });
-
-  const loadFlows = () => {
-    try {
-      const data = getFlows();
-      setFlows(data || []);
-      const allCategories = getAllCategories();
-      setCategories(['All', 'Unfiled', ...allCategories]);
-      // Auto-expand categories that have flows in the current filter
-      if (allCategories.length > 0 && expandedCategories.size === 0) {
-        setExpandedCategories(new Set(allCategories));
-      }
-    } catch (error) {
-      logger.error('Error loading flows:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories((prev) => {
@@ -120,7 +119,7 @@ export default function FlowsPage() {
     setSelectedCategory(categoryName);
   };
 
-  const organizeFlowsByCategory = () => {
+  const organizeFlowsByCategory = useMemo(() => {
     const organized: Record<string, Flow[]> = {};
     const unfiled: Flow[] = [];
 
@@ -148,9 +147,9 @@ export default function FlowsPage() {
     );
 
     return { organized, unfiled };
-  };
+  }, [flows]);
 
-  const filterAndSortFlows = () => {
+  const filteredFlows = useMemo(() => {
     let filtered = flows;
 
     if (debouncedSearchQuery) {
@@ -171,29 +170,15 @@ export default function FlowsPage() {
       }
     }
 
-    filtered = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       }
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
+  }, [flows, debouncedSearchQuery, selectedCategory, sortBy]);
 
-    setFilteredFlows(filtered);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const handleNewFlow = () => {
+  const handleNewFlow = useCallback(() => {
     // Store selected category for auto-assignment when flow is created
     if (selectedCategory && selectedCategory !== 'All' && selectedCategory !== 'Unfiled') {
       localStorage.setItem('pinn.pendingFlowCategory', selectedCategory);
@@ -201,7 +186,7 @@ export default function FlowsPage() {
       localStorage.removeItem('pinn.pendingFlowCategory');
     }
     navigate({ to: '/flows' });
-  };
+  }, [selectedCategory, navigate]);
 
   const handleCreateCategory = () => {
     setAssignAfterCreateFlowId(null);
@@ -314,13 +299,12 @@ export default function FlowsPage() {
     setMenuOpen(false);
   };
 
-  const confirmClearAll = () => {
+  const confirmClearAll = useCallback(() => {
     flows.forEach((flow) => deleteFlow(flow.id));
     setFlows([]);
-    setFilteredFlows([]);
-  };
+  }, [flows]);
 
-  const { organized, unfiled } = organizeFlowsByCategory();
+  const { organized, unfiled } = organizeFlowsByCategory;
   // Include empty categories from the persisted list so they show in the sidebar
   const categorySet = new Set<string>([
     ...Object.keys(organized),

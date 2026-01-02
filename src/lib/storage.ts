@@ -2,8 +2,6 @@ import {
   readAllNotesFromDirectory,
   readNoteFromFile,
   writeNoteToFile,
-  deleteNoteFile,
-  readNotesIndex,
   validateNotesIndex,
   rebuildNotesIndex,
   isFolderConfigured,
@@ -29,7 +27,6 @@ let indexValidated = false; // Track if index has been validated on this load
 
 // Fallback to localStorage if file system is not configured
 const STORAGE_KEY = 'pinn.notes';
-const FOLDERS_KEY = 'pinn.folders';
 
 /**
  * Initialize storage - load data from file system or localStorage

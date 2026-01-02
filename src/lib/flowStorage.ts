@@ -1,6 +1,5 @@
 import { 
   readAllFlowsFromDirectory,
-  readFlowFromFile,
   writeFlowToFile,
   deleteFlowFile,
   readCategoriesFromFile,

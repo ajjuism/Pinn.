@@ -3,8 +3,6 @@
  * Handles title-based slug generation for readable filenames
  */
 
-import { logger } from '../utils/logger';
-
 export interface NoteMetadata {
   id: string;
   title: string;

@@ -1,6 +1,6 @@
-import { createRootRoute, Outlet, notFound } from '@tanstack/react-router';
+import { createRootRoute, Outlet } from '@tanstack/react-router';
 import NotFoundPage from '../components/NotFoundPage';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bookmark, Folder, X, AlertCircle, Check } from 'lucide-react';
 import OnboardingDialog from '../components/OnboardingDialog';
 import LoadingScreen from '../components/LoadingScreen';
@@ -144,7 +144,7 @@ function RootComponent() {
     }
   }, [isInitializing, showOnboarding, isMobile]);
 
-  const handleRestorePermission = async () => {
+  const handleRestorePermission = useCallback(async () => {
     setIsRestoringPermission(true);
     try {
       logger.log('Attempting to restore directory access...');
@@ -169,7 +169,7 @@ function RootComponent() {
     } finally {
       setIsRestoringPermission(false);
     }
-  };
+  }, []);
 
   // Show loading state while initializing
   if (isInitializing) {

@@ -487,10 +487,8 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
       // Merge folders and categories if present
       if (data['folders.json']) {
         try {
-          const downloadedFolders: string[] = JSON.parse(data['folders.json']);
-          const localFolders = getNotes().map(n => n.folder).filter(Boolean) as string[];
-          const mergedFolders = Array.from(new Set([...localFolders, ...downloadedFolders]));
-          // Folders are managed automatically when notes are saved, so we don't need to save separately
+          // Validate JSON format - folders are managed automatically when notes are saved
+          JSON.parse(data['folders.json']);
         } catch (e) {
           logger.warn('Error merging folders:', e);
         }
@@ -498,10 +496,8 @@ export default function SettingsDialog({ isOpen, onClose, onFolderChange }: Sett
 
       if (data['flowCategories.json']) {
         try {
-          const downloadedCategories: string[] = JSON.parse(data['flowCategories.json']);
-          const localCategories = getFlows().map(f => f.category).filter(Boolean) as string[];
-          const mergedCategories = Array.from(new Set([...localCategories, ...downloadedCategories]));
-          // Categories are managed automatically when flows are saved
+          // Validate JSON format - categories are managed automatically when flows are saved
+          JSON.parse(data['flowCategories.json']);
         } catch (e) {
           logger.warn('Error merging categories:', e);
         }

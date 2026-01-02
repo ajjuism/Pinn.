@@ -20,6 +20,7 @@ import '@xyflow/react/dist/style.css';
 import { FileText, X, Search, Trash2, Tag, Palette, Edit2, Clock, PlusCircle, Calendar, ChevronLeft, Check, HelpCircle, GitBranch, AlertCircle, CheckCircle2, Book } from 'lucide-react';
 import { getFlowById, saveFlow, createFlow as createFlowStorage, Flow, FlowNode, FlowEdge, removeNodeFromFlow, setFlowCategory } from '../lib/flowStorage';
 import { getNotes, getNoteById, getNoteByIdWithContent, saveNote, createNote, Note } from '../lib/storage';
+import { logger } from '../utils/logger';
 import MarkdownPreview from './MarkdownPreview';
 
 interface CustomNodeData extends Record<string, unknown> {
