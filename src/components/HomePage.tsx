@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { Search, Plus, Menu as MenuIcon, FileText, Download, Upload, Trash2, GitBranch, Bookmark, Book, Sparkles, Settings, Network } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { getNotes as loadFromStorage, Note, writeAll } from '../lib/storage';
 import { getFlows, Flow } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
@@ -12,22 +13,16 @@ import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
 import LoadingSpinner from './shared/LoadingSpinner';
 
-interface HomePageProps {
-  onNavigateToEditor: (noteId?: string) => void;
-  onNavigateToFlows: () => void;
-  onNavigateToFlow: (flowId: string) => void;
-  onNavigateToNotes: () => void;
-  onNavigateToTrash: () => void;
-}
-
-export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavigateToFlow, onNavigateToNotes, onNavigateToTrash }: HomePageProps) {
+export default function HomePage() {
+  const navigate = useNavigate();
+  const search = useSearch({ from: '/' });
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [flows, setFlows] = useState<Flow[]>([]);
   const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'date'>('date');
-  const [flowSortBy, setFlowSortBy] = useState<'title' | 'date'>('date');
+  const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
+  const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
+  const [flowSortBy, setFlowSortBy] = useState<'title' | 'date'>((search as { flowSort?: 'title' | 'date' })?.flowSort || 'date');
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
@@ -58,6 +53,31 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   }, []);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
+
+  // Sync state with URL query params
+  useEffect(() => {
+    const urlSearch = (search as { search?: string })?.search || '';
+    const urlSort = (search as { sort?: 'title' | 'date' })?.sort || 'date';
+    const urlFlowSort = (search as { flowSort?: 'title' | 'date' })?.flowSort || 'date';
+    
+    if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
+    if (urlSort !== sortBy) setSortBy(urlSort);
+    if (urlFlowSort !== flowSortBy) setFlowSortBy(urlFlowSort);
+  }, [search]);
+
+  // Update URL when state changes
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+    if (sortBy !== 'date') params.sort = sortBy;
+    if (flowSortBy !== 'date') params.flowSort = flowSortBy;
+    
+    navigate({
+      to: '/',
+      search: params,
+      replace: true,
+    });
+  }, [debouncedSearchQuery, sortBy, flowSortBy]);
 
   useEffect(() => {
     filterAndSortNotes();
@@ -148,7 +168,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
   };
 
   const handleNewNote = () => {
-    onNavigateToEditor();
+    navigate({ to: '/note/new' });
   };
 
   const handleExportAll = async () => {
@@ -281,21 +301,21 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
             <span>New Note</span>
           </button>
           <button
-            onClick={onNavigateToNotes}
+            onClick={() => navigate({ to: '/notes' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button
-            onClick={onNavigateToFlows}
+            onClick={() => navigate({ to: '/flows' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
             <span>Flow</span>
           </button>
           <button
-            onClick={onNavigateToTrash}
+            onClick={() => navigate({ to: '/trash' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Trash2 className="w-5 h-5" />
@@ -399,7 +419,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                     Sort By: {flowSortBy === 'title' ? 'Title' : 'Date'}
                   </button>
                     <button
-                      onClick={onNavigateToFlows}
+                      onClick={() => navigate({ to: '/flows' })}
                       className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                     >
                       View All
@@ -410,7 +430,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                   {filteredFlows.slice(0, 4).map((flow) => (
                     <button
                       key={flow.id}
-                      onClick={() => onNavigateToFlow(flow.id)}
+                      onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
                       className="group relative bg-theme-bg-secondary hover:bg-theme-bg-tertiary border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
                     >
                       <div className="flex items-start gap-4">
@@ -453,7 +473,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                     Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
                   </button>
                     <button
-                      onClick={onNavigateToNotes}
+                      onClick={() => navigate({ to: '/notes' })}
                       className="text-sm text-gray-500 hover:text-theme-text-primary transition-colors px-3 py-1 rounded-md hover:bg-theme-bg-secondary"
                     >
                       View All
@@ -464,7 +484,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
                   {filteredNotes.slice(0, 6).map((note) => (
                     <button
                       key={note.id}
-                      onClick={() => onNavigateToEditor(note.id)}
+                      onClick={() => navigate({ to: '/note/$noteId', params: { noteId: note.id } })}
                       className="group relative bg-theme-bg-secondary hover:bg-theme-bg-tertiary border border-gray-600 hover:border-gray-500 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5"
                     >
                       <div className="flex items-start gap-4">
@@ -571,7 +591,7 @@ export default function HomePage({ onNavigateToEditor, onNavigateToFlows, onNavi
           <GraphViewDialog
             isOpen={showGraphView}
             onClose={() => setShowGraphView(false)}
-            onNavigateToNote={onNavigateToEditor}
+            onNavigateToNote={(noteId: string) => navigate({ to: '/note/$noteId', params: { noteId } })}
           />
         </Suspense>
       )}

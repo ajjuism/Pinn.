@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.144.0",
     "@xyflow/react": "^12.9.2",
     "html2canvas": "^1.4.1",
     "https": "^1.0.0",
@@ -36,6 +37,8 @@
   "devDependencies": {
     "@babel/core": "^7.28.5",
     "@eslint/js": "^9.9.1",
+    "@tanstack/router-devtools": "^1.144.0",
+    "@tanstack/router-plugin": "^1.145.2",
     "@types/html2canvas": "^0.5.35",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

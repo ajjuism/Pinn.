@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { Search, Plus, Menu as MenuIcon, Download, Upload, Trash2, ChevronLeft, GitBranch, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, Book } from 'lucide-react';
 import { getNotes, Note, deleteNote, writeAll, getAllFolders, setNoteFolder, addFolder, renameFolder as storageRenameFolder, deleteFolder as storageDeleteFolder } from '../lib/storage';
 import { getFlowsContainingNote } from '../lib/flowStorage';
@@ -10,21 +11,19 @@ import { logger } from '../utils/logger';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
 
-interface NotesPageProps {
-  onNavigateToEditor: (noteId?: string) => void;
-  onNavigateToHome: () => void;
-  onNavigateToFlows: () => void;
-}
-
-export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavigateToFlows }: NotesPageProps) {
+export default function NotesPage() {
+  const navigate = useNavigate();
+  const router = useRouter();
+  const search = useSearch({ from: '/notes' });
+  
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'date'>('date');
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
-  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
+  const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>((search as { dateFilter?: 'all' | 'today' | 'week' | 'month' })?.dateFilter || 'all');
+  const [tagFilter, setTagFilter] = useState<string>((search as { tagFilter?: string })?.tagFilter || 'all');
   const [folders, setFolders] = useState<string[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string>('All');
+  const [selectedFolder, setSelectedFolder] = useState<string>((search as { folder?: string })?.folder || 'All');
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [assignAfterCreateNoteId, setAssignAfterCreateNoteId] = useState<string | null>(null);
@@ -63,6 +62,37 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
   }, []);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
+
+  // Sync state with URL query params
+  useEffect(() => {
+    const urlSearch = (search as { search?: string })?.search || '';
+    const urlSort = (search as { sort?: 'title' | 'date' })?.sort || 'date';
+    const urlDateFilter = (search as { dateFilter?: 'all' | 'today' | 'week' | 'month' })?.dateFilter || 'all';
+    const urlTagFilter = (search as { tagFilter?: string })?.tagFilter || 'all';
+    const urlFolder = (search as { folder?: string })?.folder || 'All';
+    
+    if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
+    if (urlSort !== sortBy) setSortBy(urlSort);
+    if (urlDateFilter !== dateFilter) setDateFilter(urlDateFilter);
+    if (urlTagFilter !== tagFilter) setTagFilter(urlTagFilter);
+    if (urlFolder !== selectedFolder) setSelectedFolder(urlFolder);
+  }, [search]);
+
+  // Update URL when state changes
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+    if (sortBy !== 'date') params.sort = sortBy;
+    if (dateFilter !== 'all') params.dateFilter = dateFilter;
+    if (tagFilter !== 'all') params.tagFilter = tagFilter;
+    if (selectedFolder !== 'All') params.folder = selectedFolder;
+    
+    navigate({
+      to: '/notes',
+      search: params,
+      replace: true,
+    });
+  }, [debouncedSearchQuery, sortBy, dateFilter, tagFilter, selectedFolder]);
 
   useEffect(() => {
     filterAndSortNotes();
@@ -237,7 +267,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
     } else {
       localStorage.removeItem('pinn.pendingFolder');
     }
-    onNavigateToEditor();
+    navigate({ to: '/note/new' });
   };
 
   const handleCreateFolder = () => {
@@ -701,9 +731,10 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
       <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
-            onClick={onNavigateToHome}
+            onClick={() => router.history.back()}
             className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
-            title="Back to Home"
+            title="Back"
+            aria-label="Go back"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
@@ -719,7 +750,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
             <span>New Note</span>
           </button>
           <button
-            onClick={onNavigateToFlows}
+            onClick={() => navigate({ to: '/flows' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
@@ -939,7 +970,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                           <div key={note.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0">
                             <Book className="w-3 h-3 flex-shrink-0" />
                             <button
-                              onClick={() => onNavigateToEditor(note.id)}
+                              onClick={() => navigate({ to: '/note/$noteId', params: { noteId: note.id } })}
                               className="flex-1 text-left truncate"
                               title={note.title}
                             >
@@ -947,7 +978,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                             </button>
                             <button
                               title="Edit note"
-                              onClick={() => onNavigateToEditor(note.id)}
+                              onClick={() => navigate({ to: '/note/$noteId', params: { noteId: note.id } })}
                               className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-theme-text-primary rounded"
                               aria-label="Edit note"
                             >
@@ -1050,7 +1081,7 @@ export default function NotesPage({ onNavigateToEditor, onNavigateToHome, onNavi
                     <div
                       key={note.id}
                       className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
-                      onClick={() => onNavigateToEditor(note.id)}
+                      onClick={() => navigate({ to: '/note/$noteId', params: { noteId: note.id } })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

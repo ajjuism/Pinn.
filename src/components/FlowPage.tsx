@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useRouter } from '@tanstack/react-router';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -20,14 +21,6 @@ import { FileText, X, Search, Trash2, Tag, Palette, Edit2, Clock, PlusCircle, Ca
 import { getFlowById, saveFlow, createFlow as createFlowStorage, Flow, FlowNode, FlowEdge, removeNodeFromFlow, setFlowCategory } from '../lib/flowStorage';
 import { getNotes, getNoteById, getNoteByIdWithContent, saveNote, createNote, Note } from '../lib/storage';
 import MarkdownPreview from './MarkdownPreview';
-
-interface FlowPageProps {
-  flowId: string | null;
-  onNavigateToHome: () => void;
-  onNavigateToEditor: (noteId: string) => void;
-  onNavigateToFlows: () => void;
-  onNavigateToNotes: () => void;
-}
 
 interface CustomNodeData extends Record<string, unknown> {
   label: string;
@@ -125,7 +118,12 @@ const nodeTypes = {
   default: CustomNode,
 };
 
-export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, onNavigateToEditor, onNavigateToFlows, onNavigateToNotes }: FlowPageProps) {
+export default function FlowPage() {
+  const { flowId: routeFlowId } = useParams({ from: '/flow/$flowId' });
+  const navigate = useNavigate();
+  const router = useRouter();
+  const flowId = routeFlowId || null;
+  
   const [flow, setFlow] = useState<Flow | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<CustomNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -875,10 +873,11 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               if (editingTitle) {
                 handleSaveTitle();
               }
-              onNavigateToFlows();
+              router.history.back();
             }}
             className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
-            title="Back to Flows"
+            title="Back"
+            aria-label="Go back"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
@@ -915,7 +914,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
               if (editingTitle) {
                 handleSaveTitle();
               }
-              onNavigateToFlows();
+              navigate({ to: '/flows' });
             }}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
@@ -923,7 +922,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
             <span>Flows</span>
           </button>
           <button
-            onClick={onNavigateToNotes}
+            onClick={() => navigate({ to: '/notes' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
@@ -1716,7 +1715,7 @@ export default function FlowPage({ flowId, onNavigateToHome: _onNavigateToHome, 
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
-                    onClick={() => onNavigateToEditor(selectedNoteWithContent?.id || selectedNote?.id || '')}
+                    onClick={() => navigate({ to: '/note/$noteId', params: { noteId: selectedNoteWithContent?.id || selectedNote?.id || '' } })}
                     className="px-4 py-2.5 bg-theme-accent hover:bg-[#4F46E5] text-white rounded-lg transition-colors flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
                   >
                     <Edit2 className="w-4 h-4" />

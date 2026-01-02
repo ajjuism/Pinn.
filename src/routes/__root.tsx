@@ -1,26 +1,21 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { createRootRoute, Outlet, notFound } from '@tanstack/react-router';
+import NotFoundPage from '../components/NotFoundPage';
+import { useState, useEffect } from 'react';
 import { Bookmark, Folder, X, AlertCircle, Check } from 'lucide-react';
-import HomePage from './components/HomePage';
-import EditorPage from './components/EditorPage';
-import FlowsPage from './components/FlowsPage';
-import NotesPage from './components/NotesPage';
-import TrashPage from './components/TrashPage';
-import NotFoundPage from './components/NotFoundPage';
-import OnboardingDialog from './components/OnboardingDialog';
-import LoadingScreen from './components/LoadingScreen';
-import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess, hasValidDirectoryAccess, restoreDirectoryAccess, getFolderPath } from './lib/fileSystemStorage';
-import { initStorage, refreshStorage, getNoteById } from './lib/storage';
-import { initFlowStorage, refreshFlowStorage, getFlowById } from './lib/flowStorage';
-import { initializeTheme, applyTheme } from './lib/themeStorage';
-import { logger } from './utils/logger';
+import OnboardingDialog from '../components/OnboardingDialog';
+import LoadingScreen from '../components/LoadingScreen';
+import { isFolderConfigured, initializeDirectoryHandle, hasDirectoryAccess, hasValidDirectoryAccess, restoreDirectoryAccess, getFolderPath } from '../lib/fileSystemStorage';
+import { initStorage, refreshStorage } from '../lib/storage';
+import { initFlowStorage, refreshFlowStorage } from '../lib/flowStorage';
+import { initializeTheme, applyTheme } from '../lib/themeStorage';
+import { logger } from '../utils/logger';
 
-// Lazy load heavy components
-const FlowPage = lazy(() => import('./components/FlowPage'));
+export const Route = createRootRoute({
+  component: RootComponent,
+  notFoundComponent: NotFoundPage,
+});
 
-function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'editor' | 'flows' | 'flow' | 'notes' | 'trash' | 'notfound'>('home');
-  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
-  const [currentFlowId, setCurrentFlowId] = useState<string | null>(null);
+function RootComponent() {
   const [isMobile, setIsMobile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -28,78 +23,6 @@ function App() {
   const [loadingSubMessage, setLoadingSubMessage] = useState<string>('');
   const [needsPermissionRestore, setNeedsPermissionRestore] = useState(false);
   const [isRestoringPermission, setIsRestoringPermission] = useState(false);
-
-  // Parse URL to determine current view and note ID
-  const parseURL = () => {
-    const path = window.location.pathname;
-    
-    // Valid routes: /, /notes, /flows, /trash, /note/:id, /note/new, /flow/:id
-    if (path === '/') {
-      return { view: 'home' as const, noteId: null, flowId: null };
-    } else if (path === '/trash') {
-      return { view: 'trash' as const, noteId: null, flowId: null };
-    } else if (path.startsWith('/note/')) {
-      const noteId = path.split('/note/')[1];
-      // Handle /note/new as a new note (editor view with null noteId)
-      if (noteId === 'new') {
-        return { view: 'editor' as const, noteId: null, flowId: null };
-      }
-      // Validate that note exists
-      if (noteId && noteId.trim() !== '') {
-        const note = getNoteById(noteId);
-        if (!note) {
-          return { view: 'notfound' as const, noteId: null, flowId: null };
-        }
-        return { view: 'editor' as const, noteId, flowId: null };
-      }
-      return { view: 'notfound' as const, noteId: null, flowId: null };
-    } else if (path === '/notes') {
-      return { view: 'notes' as const, noteId: null, flowId: null };
-    } else if (path === '/flows') {
-      return { view: 'flows' as const, noteId: null, flowId: null };
-    } else if (path.startsWith('/flow/')) {
-      const flowId = path.split('/flow/')[1];
-      // Validate that flow exists
-      if (flowId && flowId.trim() !== '') {
-        const flow = getFlowById(flowId);
-        if (!flow) {
-          return { view: 'notfound' as const, noteId: null, flowId: null };
-        }
-        return { view: 'flow' as const, noteId: null, flowId };
-      }
-      return { view: 'notfound' as const, noteId: null, flowId: null };
-    }
-    // Any other path is 404
-    return { view: 'notfound' as const, noteId: null, flowId: null };
-  };
-
-  // Handle browser back/forward navigation and initial URL parsing
-  useEffect(() => {
-    const handlePopState = () => {
-      const { view, noteId, flowId } = parseURL();
-      setCurrentView(view);
-      setCurrentNoteId(noteId || null);
-      setCurrentFlowId(flowId || null);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  // Parse initial URL after storage is initialized
-  useEffect(() => {
-    if (!isInitializing) {
-      const { view, noteId, flowId } = parseURL();
-      if (view !== 'home' || noteId || flowId) {
-        setCurrentView(view);
-        setCurrentNoteId(noteId || null);
-        setCurrentFlowId(flowId || null);
-      }
-    }
-  }, [isInitializing]);
 
   // Detect mobile devices
   useEffect(() => {
@@ -248,58 +171,6 @@ function App() {
     }
   };
 
-  const navigateToHome = () => {
-    setCurrentView('home');
-    setCurrentNoteId(null);
-    setCurrentFlowId(null);
-    window.history.pushState({}, '', '/');
-  };
-
-  const navigateToEditor = (noteId?: string) => {
-    setCurrentNoteId(noteId || null);
-    setCurrentView('editor');
-    setCurrentFlowId(null);
-    if (noteId) {
-      window.history.pushState({}, '', `/note/${noteId}`);
-    } else {
-      // Use /note/new for new notes to distinguish from home page
-      window.history.pushState({}, '', '/note/new');
-    }
-  };
-
-  const navigateToFlows = () => {
-    setCurrentView('flows');
-    setCurrentNoteId(null);
-    setCurrentFlowId(null);
-    window.history.pushState({}, '', '/flows');
-  };
-
-  const navigateToNotes = () => {
-    setCurrentView('notes');
-    setCurrentNoteId(null);
-    setCurrentFlowId(null);
-    window.history.pushState({}, '', '/notes');
-  };
-
-  const navigateToTrash = () => {
-    setCurrentView('trash');
-    setCurrentNoteId(null);
-    setCurrentFlowId(null);
-    window.history.pushState({}, '', '/trash');
-  };
-
-  const navigateToFlow = (flowId?: string) => {
-    setCurrentFlowId(flowId || null);
-    setCurrentView('flow');
-    setCurrentNoteId(null);
-    if (flowId) {
-      window.history.pushState({}, '', `/flow/${flowId}`);
-    } else {
-      window.history.pushState({}, '', '/flows');
-    }
-  };
-
-
   // Show loading state while initializing
   if (isInitializing) {
     return <LoadingScreen message={loadingStep} subMessage={loadingSubMessage} />;
@@ -410,23 +281,7 @@ function App() {
 
           {/* Main Content - adjust padding if banner is visible */}
           <div className={needsPermissionRestore ? 'pt-16' : ''}>
-            {currentView === 'home' ? (
-              <HomePage onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToFlow={navigateToFlow} onNavigateToNotes={navigateToNotes} onNavigateToTrash={navigateToTrash} />
-            ) : currentView === 'editor' ? (
-              <EditorPage noteId={currentNoteId} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} onNavigateToEditor={navigateToEditor} />
-            ) : currentView === 'flows' ? (
-              <FlowsPage onNavigateToFlow={navigateToFlow} onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} />
-            ) : currentView === 'notes' ? (
-              <NotesPage onNavigateToEditor={navigateToEditor} onNavigateToHome={navigateToHome} onNavigateToFlows={navigateToFlows} />
-            ) : currentView === 'trash' ? (
-              <TrashPage onNavigateToHome={navigateToHome} onNavigateToNotes={navigateToNotes} onNavigateToFlows={navigateToFlows} />
-            ) : currentView === 'flow' ? (
-              <Suspense fallback={<LoadingScreen message="flows" subMessage="Loading flow..." />}>
-                <FlowPage flowId={currentFlowId} onNavigateToHome={navigateToHome} onNavigateToEditor={navigateToEditor} onNavigateToFlows={navigateToFlows} onNavigateToNotes={navigateToNotes} />
-              </Suspense>
-            ) : (
-              <NotFoundPage onNavigateToHome={navigateToHome} />
-            )}
+            <Outlet />
           </div>
         </>
       )}
@@ -434,4 +289,3 @@ function App() {
   );
 }
 
-export default App;

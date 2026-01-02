@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Trash2, RotateCcw, X, Search, ChevronLeft, FileText, GitBranch, Folder, Tag, AlertCircle } from 'lucide-react';
 import {
   getTrashedNotes,
@@ -19,21 +20,18 @@ import {
 import ConfirmationModal, { type ConfirmationVariant } from './shared/ConfirmationModal';
 import { logger } from '../utils/logger';
 
-interface TrashPageProps {
-  onNavigateToHome: () => void;
-  onNavigateToNotes: () => void;
-  onNavigateToFlows: () => void;
-}
-
 type TrashFilter = 'all' | 'notes' | 'flows' | 'folders' | 'categories';
 
-export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavigateToFlows }: TrashPageProps) {
+export default function TrashPage() {
+  const navigate = useNavigate();
+  const search = useSearch({ from: '/trash' });
+  
   const [trashedNotes, setTrashedNotes] = useState<TrashedItem[]>([]);
   const [trashedFlows, setTrashedFlows] = useState<TrashedItem[]>([]);
   const [trashedFolders, setTrashedFolders] = useState<TrashedItem[]>([]);
   const [trashedCategories, setTrashedCategories] = useState<TrashedItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<TrashFilter>('all');
+  const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
+  const [filter, setFilter] = useState<TrashFilter>((search as { filter?: TrashFilter })?.filter || 'all');
   const [loading, setLoading] = useState(true);
   
   // Confirmation modal state
@@ -77,7 +75,7 @@ export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavig
       await loadTrash();
       // Trigger refresh in other pages
       window.dispatchEvent(new Event('storage-refresh'));
-      onNavigateToNotes();
+      navigate({ to: '/notes' });
     } catch (error) {
       logger.error('Error restoring note:', error);
     }
@@ -88,7 +86,7 @@ export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavig
       await restoreFlowFromTrash(item.id);
       await loadTrash();
       window.dispatchEvent(new Event('storage-refresh'));
-      onNavigateToFlows();
+      navigate({ to: '/flows' });
     } catch (error) {
       logger.error('Error restoring flow:', error);
     }
@@ -99,7 +97,7 @@ export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavig
       await restoreFolderFromTrash(item.title);
       await loadTrash();
       window.dispatchEvent(new Event('storage-refresh'));
-      onNavigateToNotes();
+      navigate({ to: '/notes' });
     } catch (error) {
       logger.error('Error restoring folder:', error);
     }
@@ -110,7 +108,7 @@ export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavig
       await restoreCategoryFromTrash(item.title);
       await loadTrash();
       window.dispatchEvent(new Event('storage-refresh'));
-      onNavigateToFlows();
+      navigate({ to: '/flows' });
     } catch (error) {
       logger.error('Error restoring category:', error);
     }
@@ -247,7 +245,7 @@ export default function TrashPage({ onNavigateToHome, onNavigateToNotes, onNavig
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={onNavigateToHome}
+                onClick={() => navigate({ to: '/' })}
                 className="p-2 rounded-lg hover:bg-theme-bg-secondary transition-colors"
                 aria-label="Back to home"
               >

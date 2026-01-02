@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useRouter } from '@tanstack/react-router';
 import {
   Plus,
   Menu as MenuIcon,
@@ -41,15 +42,11 @@ import { logger } from '../utils/logger';
 import { exportNoteAsJSON, exportNoteAsMarkdown, exportNotesAsJSON, exportNotesAsMarkdown } from '../utils/export';
 import { useClickOutside } from '../hooks/useClickOutside';
 
-interface EditorPageProps {
-  noteId: string | null;
-  onNavigateToHome: () => void;
-  onNavigateToFlows: () => void;
-  onNavigateToNotes: () => void;
-  onNavigateToEditor?: (noteId: string) => void;
-}
-
-export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows, onNavigateToNotes, onNavigateToEditor }: EditorPageProps) {
+export default function EditorPage() {
+  const { noteId: routeNoteId } = useParams({ from: '/note/$noteId' });
+  const navigate = useNavigate();
+  const router = useRouter();
+  const noteId = routeNoteId === 'new' ? null : routeNoteId;
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [editorMode, setEditorMode] = useState<'markdown' | 'preview'>(noteId ? 'preview' : 'markdown');
@@ -610,7 +607,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
   const confirmDeleteNote = () => {
     if (currentNoteId) {
       deleteNote(currentNoteId);
-      onNavigateToHome();
+      navigate({ to: '/' });
     }
     setFlowsUsingNote([]);
   };
@@ -632,7 +629,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
       const newFlow = createFlow(newFlowName.trim());
       addNoteToFlow(newFlow.id, currentNoteId, title || 'Untitled');
       // Navigate to flows page and then to the new flow
-      onNavigateToFlows();
+      navigate({ to: '/flows' });
       // Note: The flow will be opened from the flows listing page
     }
 
@@ -782,9 +779,10 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
       <header className="flex-shrink-0 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border">
         <div className="flex items-center gap-4">
           <button
-            onClick={onNavigateToNotes}
+            onClick={() => router.history.back()}
             className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
-            title="Back to Notes"
+            title="Back"
+            aria-label="Go back"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
@@ -792,21 +790,21 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={onNavigateToHome}
+            onClick={() => navigate({ to: '/note/new' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>New Note</span>
           </button>
           <button
-            onClick={onNavigateToNotes}
+            onClick={() => navigate({ to: '/notes' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
           </button>
           <button
-            onClick={onNavigateToFlows}
+            onClick={() => navigate({ to: '/flows' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <GitBranch className="w-5 h-5" />
@@ -1101,7 +1099,7 @@ export default function EditorPage({ noteId, onNavigateToHome, onNavigateToFlows
             ) : (
               <MarkdownPreview 
                 content={content} 
-                onNavigateToNote={onNavigateToEditor}
+                onNavigateToNote={(noteId: string) => navigate({ to: '/note/$noteId', params: { noteId } })}
               />
             )}
           </div>

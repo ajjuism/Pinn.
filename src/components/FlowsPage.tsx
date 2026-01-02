@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, GitBranch } from 'lucide-react';
 import { getFlows, Flow, deleteFlow, getAllCategories, setFlowCategory, addCategory, renameCategory as storageRenameCategory, deleteCategory as storageDeleteCategory } from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
@@ -7,19 +8,17 @@ import { logger } from '../utils/logger';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
 
-interface FlowsPageProps {
-  onNavigateToFlow: (flowId?: string) => void;
-  onNavigateToHome: () => void;
-  onNavigateToNotes: () => void;
-}
-
-export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNavigateToNotes }: FlowsPageProps) {
+export default function FlowsPage() {
+  const navigate = useNavigate();
+  const router = useRouter();
+  const search = useSearch({ from: '/flows' });
+  
   const [flows, setFlows] = useState<Flow[]>([]);
   const [filteredFlows, setFilteredFlows] = useState<Flow[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'title' | 'date'>('date');
+  const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
+  const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>((search as { category?: string })?.category || 'All');
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [assignAfterCreateFlowId, setAssignAfterCreateFlowId] = useState<string | null>(null);
@@ -52,6 +51,31 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
   }, []);
 
   const debouncedSearchQuery = useDebounce(searchQuery);
+
+  // Sync state with URL query params
+  useEffect(() => {
+    const urlSearch = (search as { search?: string })?.search || '';
+    const urlSort = (search as { sort?: 'title' | 'date' })?.sort || 'date';
+    const urlCategory = (search as { category?: string })?.category || 'All';
+    
+    if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
+    if (urlSort !== sortBy) setSortBy(urlSort);
+    if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
+  }, [search]);
+
+  // Update URL when state changes
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
+    if (sortBy !== 'date') params.sort = sortBy;
+    if (selectedCategory !== 'All') params.category = selectedCategory;
+    
+    navigate({
+      to: '/flows',
+      search: params,
+      replace: true,
+    });
+  }, [debouncedSearchQuery, sortBy, selectedCategory]);
 
   useEffect(() => {
     filterAndSortFlows();
@@ -176,7 +200,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
     } else {
       localStorage.removeItem('pinn.pendingFlowCategory');
     }
-    onNavigateToFlow();
+    navigate({ to: '/flows' });
   };
 
   const handleCreateCategory = () => {
@@ -309,9 +333,10 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
       <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
-            onClick={onNavigateToHome}
+            onClick={() => router.history.back()}
             className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
-            title="Back to Home"
+            title="Back"
+            aria-label="Go back"
           >
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm">Back</span>
@@ -327,7 +352,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
             <span>New Flow</span>
           </button>
           <button
-            onClick={onNavigateToNotes}
+            onClick={() => navigate({ to: '/notes' })}
             className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
           >
             <Book className="w-5 h-5" />
@@ -532,7 +557,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                           <div key={flow.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0">
                             <GitBranch className="w-3 h-3 flex-shrink-0" />
                             <button
-                              onClick={() => onNavigateToFlow(flow.id)}
+                              onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
                               className="flex-1 text-left truncate"
                               title={flow.title}
                             >
@@ -540,7 +565,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                             </button>
                             <button
                               title="Edit flow"
-                              onClick={() => onNavigateToFlow(flow.id)}
+                              onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
                               className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-theme-text-primary rounded"
                               aria-label="Edit flow"
                             >
@@ -612,7 +637,7 @@ export default function FlowsPage({ onNavigateToFlow, onNavigateToHome, onNaviga
                     <div
                       key={flow.id}
                       className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
-                      onClick={() => onNavigateToFlow(flow.id)}
+                      onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
