@@ -351,18 +351,36 @@ export function createNote(title: string, content: string): Note {
   return note;
 }
 
-export function deleteNote(id: string): void {
+export async function deleteNote(id: string): Promise<void> {
   const note = getNoteById(id);
-  const all = readAll().filter((n) => n.id !== id);
-  notesCache = all;
-  
+  if (!note) {
+    logger.warn(`Note ${id} not found, cannot delete`);
+    return;
+  }
+
   // Move to trash instead of deleting
-  if (isFolderConfigured() && hasDirectoryAccess()) {
-    const { moveNoteToTrash } = require('./trashStorage');
-    moveNoteToTrash(id, note?.folder).catch(logger.error);
-  } else {
-    // Fallback to localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  try {
+    if (isFolderConfigured() && hasDirectoryAccess()) {
+      const { moveNoteToTrash } = await import('./trashStorage');
+      await moveNoteToTrash(id, note.folder);
+    } else {
+      // localStorage mode: move to localStorage trash
+      const { moveNoteToTrashLocalStorage } = await import('./trashStorage');
+      await moveNoteToTrashLocalStorage(note);
+    }
+    
+    // Only remove from cache after successful trash operation
+    const all = readAll().filter((n) => n.id !== id);
+    notesCache = all;
+    
+    // Update localStorage if not using file system
+    if (!isFolderConfigured() || !hasDirectoryAccess()) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+    }
+  } catch (error) {
+    logger.error(`Error deleting note ${id}:`, error);
+    // Don't update cache if trash operation failed - note should remain visible
+    throw error;
   }
 }
 
@@ -437,10 +455,10 @@ export function renameFolder(oldName: string, newName: string): { updatedCount: 
   return { updatedCount: updated };
 }
 
-export function deleteFolder(
+export async function deleteFolder(
   folderName: string,
   mode: 'delete-notes' | 'move-to-unfiled'
-): { affectedCount: number } {
+): Promise<{ affectedCount: number }> {
   const target = (folderName || '').trim();
   if (!target) return { affectedCount: 0 };
   const all = readAll();
@@ -452,11 +470,15 @@ export function deleteFolder(
     affected = notesInFolder.length;
     
     // Move folder and notes to trash
-    if (isFolderConfigured() && hasDirectoryAccess()) {
-      const { moveFolderToTrash } = require('./trashStorage');
-      moveFolderToTrash(target, notesInFolder).catch(logger.error);
+    try {
+      const { moveFolderToTrash } = await import('./trashStorage');
+      await moveFolderToTrash(target, notesInFolder);
+    } catch (error) {
+      logger.error(`Error moving folder ${target} to trash:`, error);
+      throw error;
     }
     
+    // Only remove from cache after successful trash operation
     next = all.filter((n) => {
       const isInFolder = (n.folder || '').trim() === target;
       return !isInFolder;

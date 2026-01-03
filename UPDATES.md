@@ -1,2 +1,1 @@
 - For MD editor, use TipTap instead, combine view and edit pages
-- PDF rendering improvements

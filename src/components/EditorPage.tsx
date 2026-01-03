@@ -603,10 +603,15 @@ export default function EditorPage() {
     setMenuOpen(false);
   };
 
-  const confirmDeleteNote = () => {
+  const confirmDeleteNote = async () => {
     if (currentNoteId) {
-      deleteNote(currentNoteId);
-      navigate({ to: '/' });
+      try {
+        await deleteNote(currentNoteId);
+        navigate({ to: '/' });
+      } catch (error) {
+        logger.error('Error deleting note:', error);
+        // Note remains open if deletion failed
+      }
     }
     setFlowsUsingNote([]);
   };

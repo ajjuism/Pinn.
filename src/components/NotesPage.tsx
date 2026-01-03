@@ -325,14 +325,19 @@ export default function NotesPage() {
     setShowFolderDialog(false);
   };
 
-  const confirmDeleteFolder = (mode: 'delete-notes' | 'move-to-unfiled') => {
+  const confirmDeleteFolder = async (mode: 'delete-notes' | 'move-to-unfiled') => {
     if (!folderToDelete) return;
-    storageDeleteFolder(folderToDelete, mode);
-    setShowFolderDeleteDialog(false);
-    setFolderToDelete(null);
-    setFolderDeleteCount(0);
-    if (selectedFolder === folderToDelete) setSelectedFolder('All');
-    loadNotes();
+    try {
+      await storageDeleteFolder(folderToDelete, mode);
+      setShowFolderDeleteDialog(false);
+      setFolderToDelete(null);
+      setFolderDeleteCount(0);
+      if (selectedFolder === folderToDelete) setSelectedFolder('All');
+      loadNotes();
+    } catch (error) {
+      logger.error('Error deleting folder:', error);
+      // Folder remains in UI if deletion failed
+    }
   };
 
   const handleDeleteNote = (noteId: string, e: React.MouseEvent) => {
@@ -343,12 +348,17 @@ export default function NotesPage() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteNote = () => {
+  const confirmDeleteNote = async () => {
     if (noteToDelete) {
-      deleteNote(noteToDelete);
-      loadNotes();
-      setNoteToDelete(null);
-      setFlowsUsingNote([]);
+      try {
+        await deleteNote(noteToDelete);
+        loadNotes();
+        setNoteToDelete(null);
+        setFlowsUsingNote([]);
+      } catch (error) {
+        logger.error('Error deleting note:', error);
+        // Note remains in UI if deletion failed
+      }
     }
   };
 
@@ -519,9 +529,19 @@ export default function NotesPage() {
     setMenuOpen(false);
   };
 
-  const confirmClearAll = useCallback(() => {
-    notes.forEach((note) => deleteNote(note.id));
-    setNotes([]);
+  const confirmClearAll = useCallback(async () => {
+    try {
+      // Delete all notes sequentially to avoid race conditions
+      for (const note of notes) {
+        await deleteNote(note.id);
+      }
+      setNotes([]);
+      loadNotes();
+    } catch (error) {
+      logger.error('Error clearing all notes:', error);
+      // Reload notes to show any that failed to delete
+      loadNotes();
+    }
   }, [notes]);
 
   const renderPreviewWithTags = (content: string, maxLength: number = 100) => {
