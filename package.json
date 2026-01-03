@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.2",
     "@tanstack/react-router": "^1.144.0",
     "@xyflow/react": "^12.9.2",
     "html2canvas": "^1.4.1",
@@ -30,7 +31,9 @@
     "reactflow": "^11.11.4",
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
+    "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
+    "unified": "^11.0.5",
     "vis-data": "^7.1.10",
     "vis-network": "^9.1.13"
   },

@@ -1,4 +1,2 @@
-- Routing (React Router or some shit)
 - For MD editor, use TipTap instead, combine view and edit pages
-- Shit ass code, make it better
 - PDF rendering improvements
