@@ -241,6 +241,10 @@ export async function moveNoteToTrash(noteId: string, originalFolder?: string): 
     const pathParts = noteEntry.filePath.split('/');
     filename = pathParts[pathParts.length - 1];
     
+    if (!filename) {
+      throw new Error(`Invalid file path for note ${noteId}: ${noteEntry.filePath}`);
+    }
+    
     dirHandle = notesDir;
     if (pathParts.length > 1) {
       for (let i = 0; i < pathParts.length - 1; i++) {
