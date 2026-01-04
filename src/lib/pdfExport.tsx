@@ -52,6 +52,102 @@ function rgbToHex([r, g, b]: [number, number, number]): string {
   }).join('')}`;
 }
 
+/**
+ * Detect if a character is an emoji
+ * Covers most emoji ranges including:
+ * - Basic emojis (U+1F300 - U+1F9FF)
+ * - Emoticons (U+1F600 - U+1F64F)
+ * - Supplemental symbols (U+1F900 - U+1F9FF)
+ * - Symbols & Pictographs (U+1F300 - U+1F5FF)
+ * - Transport & Map (U+1F680 - U+1F6FF)
+ * - Flags (U+1F1E6 - U+1F1FF)
+ * - And various other ranges
+ */
+function isEmoji(char: string): boolean {
+  const codePoint = char.codePointAt(0);
+  if (!codePoint) return false;
+  
+  return (
+    // Emoticons
+    (codePoint >= 0x1F600 && codePoint <= 0x1F64F) ||
+    // Miscellaneous Symbols and Pictographs
+    (codePoint >= 0x1F300 && codePoint <= 0x1F5FF) ||
+    // Supplemental Symbols and Pictographs
+    (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) ||
+    // Transport and Map Symbols
+    (codePoint >= 0x1F680 && codePoint <= 0x1F6FF) ||
+    // Regional Indicator Symbols (flags)
+    (codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF) ||
+    // Symbols and Pictographs Extended-A
+    (codePoint >= 0x1FA00 && codePoint <= 0x1FAFF) ||
+    // Symbols and Pictographs Extended-B
+    (codePoint >= 0x1F000 && codePoint <= 0x1F02F) ||
+    // Dingbats
+    (codePoint >= 0x2700 && codePoint <= 0x27BF) ||
+    // Miscellaneous Symbols
+    (codePoint >= 0x2600 && codePoint <= 0x26FF) ||
+    // Supplemental Arrows-C
+    (codePoint >= 0x1F800 && codePoint <= 0x1F8FF) ||
+    // CJK Symbols and Punctuation (includes some emoji-like symbols)
+    (codePoint >= 0x3030 && codePoint <= 0x303F && (codePoint === 0x3030 || codePoint === 0x303D))
+  );
+}
+
+/**
+ * Split text into segments of emoji and non-emoji characters
+ */
+function splitEmojiSegments(text: string): EmojiSegment[] {
+  const segments: EmojiSegment[] = [];
+  let currentSegment = '';
+  let currentIsEmoji = false;
+  
+  // Use Array.from to properly handle surrogate pairs (multi-byte emojis)
+  const chars = Array.from(text);
+  
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    const charIsEmoji = isEmoji(char);
+    
+    // Check for emoji sequences (like flags which are 2 regional indicators)
+    if (charIsEmoji && i < chars.length - 1) {
+      const nextChar = chars[i + 1];
+      if (isEmoji(nextChar)) {
+        // Check if this is a flag (two regional indicators)
+        const code1 = char.codePointAt(0);
+        const code2 = nextChar.codePointAt(0);
+        if (code1 && code2 && code1 >= 0x1F1E6 && code1 <= 0x1F1FF && 
+            code2 >= 0x1F1E6 && code2 <= 0x1F1FF) {
+          // It's a flag, combine them
+          if (currentSegment && currentIsEmoji !== charIsEmoji) {
+            segments.push({ text: currentSegment, isEmoji: currentIsEmoji });
+            currentSegment = '';
+          }
+          currentSegment += char + nextChar;
+          currentIsEmoji = true;
+          i++; // Skip next char as we've already processed it
+          continue;
+        }
+      }
+    }
+    
+    // If the emoji status changed, save current segment and start new one
+    if (currentSegment && currentIsEmoji !== charIsEmoji) {
+      segments.push({ text: currentSegment, isEmoji: currentIsEmoji });
+      currentSegment = '';
+    }
+    
+    currentSegment += char;
+    currentIsEmoji = charIsEmoji;
+  }
+  
+  // Add the last segment
+  if (currentSegment) {
+    segments.push({ text: currentSegment, isEmoji: currentIsEmoji });
+  }
+  
+  return segments.length > 0 ? segments : [{ text, isEmoji: false }];
+}
+
 // Text segment type for inline markdown parsing
 interface TextSegment {
   text: string;
@@ -63,6 +159,13 @@ interface TextSegment {
   isImage?: boolean;
   isTag?: boolean;
   noteRef?: { id: string; title: string };
+  hasEmoji?: boolean; // Indicates if segment contains emojis
+}
+
+// Emoji segment for splitting text with emojis
+interface EmojiSegment {
+  text: string;
+  isEmoji: boolean;
 }
 
 // Syntax highlighting segment
@@ -93,6 +196,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     lineHeight: 1.6,
     color: rgbToHex(COLORS.body),
+  },
+  emoji: {
+    fontFamily: 'Helvetica', // Fallback font
+    // Note: react-pdf will attempt to use the system's emoji font when rendering emojis
+    // Emoji rendering quality depends on the PDF viewer and system fonts available
   },
   title: {
     fontSize: 24,
@@ -582,8 +690,38 @@ async function loadImageFromUrl(url: string): Promise<string | null> {
 // ============================================================================
 
 /**
+ * Render text with emoji support
+ * Splits text into emoji and non-emoji segments and applies appropriate styling
+ */
+function renderTextWithEmojis(text: string, baseStyle: any, key: number): React.ReactElement {
+  const emojiSegments = splitEmojiSegments(text);
+  
+  return (
+    <Text key={key} style={baseStyle}>
+      {emojiSegments.map((emojiSeg, idx) => {
+        if (emojiSeg.isEmoji) {
+          // For emoji segments, use the emoji style (which uses system emoji font)
+          return (
+            <Text key={idx} style={[baseStyle, styles.emoji]}>
+              {emojiSeg.text}
+            </Text>
+          );
+        } else {
+          // For non-emoji segments, use the base style
+          return (
+            <Text key={idx} style={baseStyle}>
+              {emojiSeg.text}
+            </Text>
+          );
+        }
+      })}
+    </Text>
+  );
+}
+
+/**
  * Render inline content (text with formatting)
- * Enhanced to match legacy styling exactly
+ * Enhanced to match legacy styling exactly with emoji support
  */
 function renderInlineContent(node: PhrasingContent, key: number = 0): React.ReactElement {
   if (node.type === 'text') {
@@ -594,21 +732,18 @@ function renderInlineContent(node: PhrasingContent, key: number = 0): React.Reac
       <Text key={key}>
         {segments.map((segment, idx) => {
           if (segment.isTag) {
-            return (
-              <Text key={idx} style={styles.tag}>
-                {segment.text}
-              </Text>
-            );
+            return renderTextWithEmojis(segment.text, styles.tag, idx);
           } else if (segment.noteRef) {
-            return (
-              <Text key={idx} style={styles.noteRef}>
-                {segment.text}
-              </Text>
-            );
+            return renderTextWithEmojis(segment.text, styles.noteRef, idx);
           } else if (segment.link) {
+            const emojiSegments = splitEmojiSegments(segment.text);
             return (
               <Link key={idx} src={segment.link} style={styles.link}>
-                {segment.text}
+                {emojiSegments.map((emojiSeg, emojiIdx) => (
+                  <Text key={emojiIdx} style={emojiSeg.isEmoji ? [styles.link, styles.emoji] : styles.link}>
+                    {emojiSeg.text}
+                  </Text>
+                ))}
               </Link>
             );
           } else if (segment.isImage) {
@@ -618,26 +753,19 @@ function renderInlineContent(node: PhrasingContent, key: number = 0): React.Reac
               </Text>
             );
           } else if (segment.code) {
+            // Don't split emojis in code - keep as-is
             return (
               <Text key={idx} style={styles.inlineCode}>
                 {segment.text}
               </Text>
             );
           } else if (segment.strikethrough) {
-            return (
-              <Text key={idx} style={styles.strikethrough}>
-                {segment.text}
-              </Text>
-            );
+            return renderTextWithEmojis(segment.text, styles.strikethrough, idx);
           } else {
             const style: any = {};
             if (segment.bold) style.fontWeight = 'bold';
             if (segment.italic) style.fontStyle = 'italic';
-            return (
-              <Text key={idx} style={style}>
-                {segment.text}
-              </Text>
-            );
+            return renderTextWithEmojis(segment.text, style, idx);
           }
         })}
       </Text>
