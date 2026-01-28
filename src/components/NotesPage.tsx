@@ -11,7 +11,8 @@ import {
   FolderOpen,
   Upload,
   Download,
-  MoreHorizontal
+  MoreHorizontal,
+  Network,
 } from 'lucide-react';
 import { getNotes, deleteNote, getAllFolders, createNote } from '../lib/storage';
 import { useRef } from 'react';
@@ -20,20 +21,31 @@ import { formatDate } from '../utils/date';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { Toggle } from './ui/toggle';
 import ConfirmDialog from './ConfirmDialog'; // Legacy dialog, keep for now or migrate later if needed
+import GraphViewDialog from './GraphViewDialog';
 import { ScrollArea } from './ui/scroll-area';
 
 export default function NotesPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/notes' });
-  
+
   const [notes, setNotes] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showGraphView, setShowGraphView] = useState(false);
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
-  const [sortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
-  const [selectedFolder, setSelectedFolder] = useState<string>((search as { folder?: string })?.folder || 'All');
+  const [sortBy] = useState<'title' | 'date'>(
+    (search as { sort?: 'title' | 'date' })?.sort || 'date'
+  );
+  const [selectedFolder, setSelectedFolder] = useState<string>(
+    (search as { folder?: string })?.folder || 'All'
+  );
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -68,17 +80,17 @@ export default function NotesPage() {
 
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
-      filtered = notes.filter((note) =>
-        note.title.toLowerCase().includes(query) ||
-        note.content?.toLowerCase().includes(query)
+      filtered = notes.filter(
+        note =>
+          note.title.toLowerCase().includes(query) || note.content?.toLowerCase().includes(query)
       );
     }
 
     if (selectedFolder && selectedFolder !== 'All') {
       if (selectedFolder === 'Unfiled') {
-        filtered = filtered.filter((n) => !n.folder || !n.folder.trim());
+        filtered = filtered.filter(n => !n.folder || !n.folder.trim());
       } else {
-        filtered = filtered.filter((n) => (n.folder || '').trim() === selectedFolder);
+        filtered = filtered.filter(n => (n.folder || '').trim() === selectedFolder);
       }
     }
 
@@ -121,27 +133,27 @@ export default function NotesPage() {
       try {
         const text = await file.text();
         if (file.type === 'application/json' || file.name.endsWith('.json')) {
-           try {
-             const jsonData = JSON.parse(text);
-             if (Array.isArray(jsonData)) {
-               // Bulk import
-               jsonData.forEach(note => {
-                 if (note.title || note.content) {
-                   createNote(note.title || 'Untitled', note.content || '');
-                   importedCount++;
-                 }
-               });
-             } else if (jsonData.title || jsonData.content) {
-               // Single note import
-               createNote(jsonData.title || 'Untitled', jsonData.content || '');
-               importedCount++;
-             }
-           } catch (e) {
-             console.error('Invalid JSON file', e);
-           }
+          try {
+            const jsonData = JSON.parse(text);
+            if (Array.isArray(jsonData)) {
+              // Bulk import
+              jsonData.forEach(note => {
+                if (note.title || note.content) {
+                  createNote(note.title || 'Untitled', note.content || '');
+                  importedCount++;
+                }
+              });
+            } else if (jsonData.title || jsonData.content) {
+              // Single note import
+              createNote(jsonData.title || 'Untitled', jsonData.content || '');
+              importedCount++;
+            }
+          } catch (e) {
+            console.error('Invalid JSON file', e);
+          }
         } else {
           // Assume markdown/text
-          const title = file.name.replace(/\.[^/.]+$/, "");
+          const title = file.name.replace(/\.[^/.]+$/, '');
           createNote(title, text);
           importedCount++;
         }
@@ -196,7 +208,7 @@ export default function NotesPage() {
             <Input
               placeholder="Search notes..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -212,7 +224,7 @@ export default function NotesPage() {
                 <DropdownMenuItem
                   key={folder}
                   onClick={() => setSelectedFolder(folder)}
-                  className={selectedFolder === folder ? "bg-accent" : ""}
+                  className={selectedFolder === folder ? 'bg-accent' : ''}
                 >
                   {folder}
                 </DropdownMenuItem>
@@ -232,11 +244,20 @@ export default function NotesPage() {
             <Toggle
               pressed={viewMode === 'list'}
               onPressedChange={() => setViewMode('list')}
-              className="rounded-l-none"
+              className="rounded-l-none border-r"
               aria-label="List view"
             >
               <ListIcon className="h-4 w-4" />
             </Toggle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowGraphView(true)}
+              className="rounded-l-none"
+              title="Graph View"
+            >
+              <Network className="h-4 w-4" />
+            </Button>
           </div>
 
           <DropdownMenu>
@@ -267,11 +288,13 @@ export default function NotesPage() {
           <div className="py-20 text-center text-muted-foreground">Loading notes...</div>
         ) : filteredNotes.length === 0 ? (
           <div className="py-20 text-center text-muted-foreground">
-            {searchQuery ? 'No notes found matching your search.' : 'No notes yet. Create one to get started.'}
+            {searchQuery
+              ? 'No notes found matching your search.'
+              : 'No notes yet. Create one to get started.'}
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
-            {filteredNotes.map((note) => (
+            {filteredNotes.map(note => (
               <Card
                 key={note.id}
                 className="group cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
@@ -283,15 +306,19 @@ export default function NotesPage() {
                       {note.title || 'Untitled'}
                     </CardTitle>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
                           <MoreVertical className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={(e) => handleDeleteClick(e, note.id)}
+                          onClick={e => handleDeleteClick(e, note.id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
@@ -321,7 +348,7 @@ export default function NotesPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2 pb-20">
-            {filteredNotes.map((note) => (
+            {filteredNotes.map(note => (
               <div
                 key={note.id}
                 className="group flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
@@ -339,7 +366,7 @@ export default function NotesPage() {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span>{formatDate(note.updated_at)}</span>
                     <span className="truncate max-w-[300px] opacity-70">
-                        {note.content?.slice(0, 50).replace(/\n/g, ' ')}...
+                      {note.content?.slice(0, 50).replace(/\n/g, ' ')}...
                     </span>
                   </div>
                 </div>
@@ -347,7 +374,7 @@ export default function NotesPage() {
                   variant="ghost"
                   size="icon"
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => handleDeleteClick(e, note.id)}
+                  onClick={e => handleDeleteClick(e, note.id)}
                 >
                   <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                 </Button>
@@ -364,6 +391,12 @@ export default function NotesPage() {
         title="Delete Note"
         message="Are you sure you want to delete this note? This cannot be undone."
         confirmText="Delete"
+      />
+
+      <GraphViewDialog
+        isOpen={showGraphView}
+        onClose={() => setShowGraphView(false)}
+        onNavigateToNote={noteId => navigate({ to: '/note/$noteId', params: { noteId } })}
       />
     </div>
   );

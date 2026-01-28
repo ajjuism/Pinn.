@@ -1,7 +1,32 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
-import { Search, Plus, Menu as MenuIcon, Download, Trash2, ChevronLeft, Book, Settings, Folder, FolderOpen, ChevronRight, ChevronDown, Edit2, GitBranch } from 'lucide-react';
-import { getFlows, Flow, deleteFlow, getAllCategories, setFlowCategory, addCategory, renameCategory as storageRenameCategory, deleteCategory as storageDeleteCategory } from '../lib/flowStorage';
+import {
+  Search,
+  Plus,
+  Menu as MenuIcon,
+  Download,
+  Trash2,
+  ChevronLeft,
+  Book,
+  Settings,
+  Folder,
+  FolderOpen,
+  ChevronRight,
+  ChevronDown,
+  Edit2,
+  GitBranch,
+} from 'lucide-react';
+import {
+  getFlows,
+  Flow,
+  deleteFlow,
+  getAllCategories,
+  setFlowCategory,
+  addCategory,
+  renameCategory as storageRenameCategory,
+  deleteCategory as storageDeleteCategory,
+  createFlow,
+} from '../lib/flowStorage';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import { logger } from '../utils/logger';
@@ -13,12 +38,16 @@ export default function FlowsPage() {
   const navigate = useNavigate();
   const router = useRouter();
   const search = useSearch({ from: '/flows' });
-  
+
   const [flows, setFlows] = useState<Flow[]>([]);
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
-  const [sortBy, setSortBy] = useState<'title' | 'date'>((search as { sort?: 'title' | 'date' })?.sort || 'date');
+  const [sortBy, setSortBy] = useState<'title' | 'date'>(
+    (search as { sort?: 'title' | 'date' })?.sort || 'date'
+  );
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>((search as { category?: string })?.category || 'All');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    (search as { category?: string })?.category || 'All'
+  );
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [assignAfterCreateFlowId, setAssignAfterCreateFlowId] = useState<string | null>(null);
@@ -42,7 +71,7 @@ export default function FlowsPage() {
       const allCategories = getAllCategories();
       setCategories(['All', 'Unfiled', ...allCategories]);
       // Auto-expand categories that have flows in the current filter
-      setExpandedCategories((prev) => {
+      setExpandedCategories(prev => {
         if (allCategories.length > 0 && prev.size === 0) {
           return new Set(allCategories);
         }
@@ -77,7 +106,7 @@ export default function FlowsPage() {
     const urlSearch = (search as { search?: string })?.search || '';
     const urlSort = (search as { sort?: 'title' | 'date' })?.sort || 'date';
     const urlCategory = (search as { category?: string })?.category || 'All';
-    
+
     if (urlSearch !== searchQuery) setSearchQuery(urlSearch);
     if (urlSort !== sortBy) setSortBy(urlSort);
     if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
@@ -89,7 +118,7 @@ export default function FlowsPage() {
     if (debouncedSearchQuery) params.search = debouncedSearchQuery;
     if (sortBy !== 'date') params.sort = sortBy;
     if (selectedCategory !== 'All') params.category = selectedCategory;
-    
+
     navigate({
       to: '/flows',
       search: params,
@@ -104,7 +133,7 @@ export default function FlowsPage() {
   });
 
   const toggleCategory = (categoryName: string) => {
-    setExpandedCategories((prev) => {
+    setExpandedCategories(prev => {
       const next = new Set(prev);
       if (next.has(categoryName)) {
         next.delete(categoryName);
@@ -123,7 +152,7 @@ export default function FlowsPage() {
     const organized: Record<string, Flow[]> = {};
     const unfiled: Flow[] = [];
 
-    flows.forEach((flow) => {
+    flows.forEach(flow => {
       const category = flow.category?.trim();
       if (category) {
         if (!organized[category]) {
@@ -136,15 +165,13 @@ export default function FlowsPage() {
     });
 
     // Sort flows within each category by updated_at
-    Object.keys(organized).forEach((category) => {
-      organized[category].sort((a, b) =>
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    Object.keys(organized).forEach(category => {
+      organized[category].sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
     });
 
-    unfiled.sort((a, b) =>
-      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-    );
+    unfiled.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
     return { organized, unfiled };
   }, [flows]);
@@ -155,18 +182,18 @@ export default function FlowsPage() {
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
       filtered = flows.filter(
-        (flow) =>
+        flow =>
           flow.title.toLowerCase().includes(query) ||
-          flow.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
-          flow.nodes?.some((node) => node.data.label.toLowerCase().includes(query))
+          flow.tags?.some(tag => tag.toLowerCase().includes(query)) ||
+          flow.nodes?.some(node => node.data.label.toLowerCase().includes(query))
       );
     }
 
     if (selectedCategory && selectedCategory !== 'All') {
       if (selectedCategory === 'Unfiled') {
-        filtered = filtered.filter((f) => !f.category || !f.category.trim());
+        filtered = filtered.filter(f => !f.category || !f.category.trim());
       } else {
-        filtered = filtered.filter((f) => (f.category || '').trim() === selectedCategory);
+        filtered = filtered.filter(f => (f.category || '').trim() === selectedCategory);
       }
     }
 
@@ -179,13 +206,14 @@ export default function FlowsPage() {
   }, [flows, debouncedSearchQuery, selectedCategory, sortBy]);
 
   const handleNewFlow = useCallback(() => {
-    // Store selected category for auto-assignment when flow is created
+    const newFlow = createFlow('Untitled Flow');
+
+    // Assign to selected category if active
     if (selectedCategory && selectedCategory !== 'All' && selectedCategory !== 'Unfiled') {
-      localStorage.setItem('pinn.pendingFlowCategory', selectedCategory);
-    } else {
-      localStorage.removeItem('pinn.pendingFlowCategory');
+      setFlowCategory(newFlow.id, selectedCategory);
     }
-    navigate({ to: '/flows' });
+
+    navigate({ to: '/flow/$flowId', params: { flowId: newFlow.id } });
   }, [selectedCategory, navigate]);
 
   const handleCreateCategory = () => {
@@ -204,7 +232,7 @@ export default function FlowsPage() {
     setCategoryToDelete(name);
     // Count how many flows are in this category to decide dialog variant
     try {
-      const count = flows.reduce((acc, f) => acc + (((f.category || '').trim() === name) ? 1 : 0), 0);
+      const count = flows.reduce((acc, f) => acc + ((f.category || '').trim() === name ? 1 : 0), 0);
       setCategoryDeleteCount(count);
     } catch {
       setCategoryDeleteCount(0);
@@ -219,7 +247,7 @@ export default function FlowsPage() {
       setShowCategoryDialog(true);
       return;
     }
-    const category = value === 'Unfiled' ? undefined : (value || undefined);
+    const category = value === 'Unfiled' ? undefined : value || undefined;
     const updated = setFlowCategory(flowId, category);
     if (updated) {
       loadFlows();
@@ -300,7 +328,7 @@ export default function FlowsPage() {
   };
 
   const confirmClearAll = useCallback(() => {
-    flows.forEach((flow) => deleteFlow(flow.id));
+    flows.forEach(flow => deleteFlow(flow.id));
     setFlows([]);
   }, [flows]);
 
@@ -308,12 +336,12 @@ export default function FlowsPage() {
   // Include empty categories from the persisted list so they show in the sidebar
   const categorySet = new Set<string>([
     ...Object.keys(organized),
-    ...categories.filter((c) => c !== 'All' && c !== 'Unfiled'),
+    ...categories.filter(c => c !== 'All' && c !== 'Unfiled'),
   ]);
   const sortedCategories = Array.from(categorySet).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="h-screen bg-theme-bg-primary flex flex-col overflow-hidden">
+    <div className="h-full bg-theme-bg-primary flex flex-col overflow-hidden">
       <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
         <div className="flex items-center gap-4">
           <button
@@ -388,9 +416,7 @@ export default function FlowsPage() {
 
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Sidebar */}
-        <aside
-          className="bg-theme-bg-primary border-r border-theme-border w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col"
-        >
+        <aside className="bg-theme-bg-primary border-r border-theme-border w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col">
           {/* Fixed Header Section */}
           <div className="flex-shrink-0 p-4 space-y-2 bg-theme-bg-primary">
             {/* Search in sidebar */}
@@ -400,7 +426,7 @@ export default function FlowsPage() {
                 type="text"
                 placeholder="Search flows..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-full bg-theme-bg-secondary border border-theme-border rounded-lg pl-9 pr-3 py-2 text-sm text-theme-text-primary placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
               />
             </div>
@@ -409,10 +435,11 @@ export default function FlowsPage() {
             <div className="mb-2">
               <button
                 onClick={() => handleCategoryClick('All')}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory === 'All'
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  selectedCategory === 'All'
                     ? 'bg-theme-bg-secondary text-theme-text-primary'
                     : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
-                  }`}
+                }`}
               >
                 <GitBranch className="w-4 h-4" />
                 <span className="flex-1 text-left">All Flows</span>
@@ -425,10 +452,11 @@ export default function FlowsPage() {
               <div className="mb-2">
                 <button
                   onClick={() => handleCategoryClick('Unfiled')}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory === 'Unfiled'
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCategory === 'Unfiled'
                       ? 'bg-theme-bg-secondary text-white'
                       : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
-                    }`}
+                  }`}
                 >
                   <GitBranch className="w-4 h-4" />
                   <span className="flex-1 text-left">Unfiled</span>
@@ -439,7 +467,9 @@ export default function FlowsPage() {
 
             {/* Categories Header */}
             <div className="flex items-center justify-between px-3 py-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Categories
+              </span>
               <button
                 onClick={handleCreateCategory}
                 className="text-xs text-gray-500 hover:text-theme-text-primary p-1"
@@ -455,8 +485,8 @@ export default function FlowsPage() {
           <div
             className="flex-1 overflow-y-auto sidebar-scroll-container px-4 pb-4"
             style={{
-              scrollbarWidth: 'none', /* Firefox */
-              msOverflowStyle: 'none', /* IE and Edge */
+              scrollbarWidth: 'none' /* Firefox */,
+              msOverflowStyle: 'none' /* IE and Edge */,
             }}
           >
             <div className="space-y-1">
@@ -472,16 +502,20 @@ export default function FlowsPage() {
                   </button>
                 </div>
               )}
-              {sortedCategories.map((categoryName) => {
+              {sortedCategories.map(categoryName => {
                 const categoryFlows = organized[categoryName] || [];
                 const isExpanded = expandedCategories.has(categoryName);
                 const filteredCategoryFlows = debouncedSearchQuery
                   ? categoryFlows.filter(
-                    (flow) =>
-                      flow.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                      flow.tags?.some((tag) => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())) ||
-                      flow.nodes?.some((node) => node.data.label.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
-                  )
+                      flow =>
+                        flow.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                        flow.tags?.some(tag =>
+                          tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+                        ) ||
+                        flow.nodes?.some(node =>
+                          node.data.label.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+                        )
+                    )
                   : categoryFlows;
 
                 return (
@@ -498,22 +532,23 @@ export default function FlowsPage() {
                           <ChevronRight className="w-4 h-4" />
                         )}
                       </button>
-                      <div className={`group flex-1 flex items-center gap-2 px-1 rounded-lg text-sm min-w-0`}>
+                      <div
+                        className={`group flex-1 flex items-center gap-2 px-1 rounded-lg text-sm min-w-0`}
+                      >
                         <button
                           onClick={() => handleCategoryClick(categoryName)}
-                          className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-colors min-w-0 ${selectedCategory === categoryName
+                          className={`flex-1 flex items-center gap-2 px-2 py-2 rounded-lg transition-colors min-w-0 ${
+                            selectedCategory === categoryName
                               ? 'bg-theme-bg-secondary text-white'
                               : 'text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary'
-                            }`}
+                          }`}
                         >
                           {isExpanded ? (
                             <FolderOpen className="w-4 h-4 flex-shrink-0" />
                           ) : (
                             <Folder className="w-4 h-4 flex-shrink-0" />
                           )}
-                          <span className="flex-1 text-left truncate">
-                            {categoryName}
-                          </span>
+                          <span className="flex-1 text-left truncate">{categoryName}</span>
                         </button>
                         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 pr-2">
                           <button
@@ -537,11 +572,16 @@ export default function FlowsPage() {
                     </div>
                     {isExpanded && filteredCategoryFlows.length > 0 && (
                       <div className="ml-7 mt-1 space-y-0.5">
-                        {filteredCategoryFlows.map((flow) => (
-                          <div key={flow.id} className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0">
+                        {filteredCategoryFlows.map(flow => (
+                          <div
+                            key={flow.id}
+                            className="group flex items-center gap-2 px-3 py-1.5 rounded text-sm text-theme-text-secondary hover:bg-theme-bg-secondary hover:text-theme-text-primary transition-colors truncate min-w-0"
+                          >
                             <GitBranch className="w-3 h-3 flex-shrink-0" />
                             <button
-                              onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
+                              onClick={() =>
+                                navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })
+                              }
                               className="flex-1 text-left truncate"
                               title={flow.title}
                             >
@@ -549,7 +589,9 @@ export default function FlowsPage() {
                             </button>
                             <button
                               title="Edit flow"
-                              onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
+                              onClick={() =>
+                                navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })
+                              }
                               className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-theme-text-primary rounded"
                               aria-label="Edit flow"
                             >
@@ -589,7 +631,11 @@ export default function FlowsPage() {
               {!loading && (
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm uppercase tracking-wider text-gray-500">
-                    {selectedCategory === 'All' ? 'All Flows' : selectedCategory === 'Unfiled' ? 'Unfiled Flows' : `Flows in "${selectedCategory}"`}
+                    {selectedCategory === 'All'
+                      ? 'All Flows'
+                      : selectedCategory === 'Unfiled'
+                        ? 'Unfiled Flows'
+                        : `Flows in "${selectedCategory}"`}
                   </h3>
                   {filteredFlows.length > 0 && (
                     <button
@@ -608,8 +654,8 @@ export default function FlowsPage() {
           <div
             className="flex-1 overflow-y-auto content-scroll-container"
             style={{
-              scrollbarWidth: 'none', /* Firefox */
-              msOverflowStyle: 'none', /* IE and Edge */
+              scrollbarWidth: 'none' /* Firefox */,
+              msOverflowStyle: 'none' /* IE and Edge */,
             }}
           >
             <div className="max-w-5xl mx-auto px-6 py-12">
@@ -617,7 +663,7 @@ export default function FlowsPage() {
                 <div className="text-center text-gray-500 py-12">Loading flows...</div>
               ) : filteredFlows.length > 0 ? (
                 <div className="space-y-6">
-                  {filteredFlows.map((flow) => (
+                  {filteredFlows.map(flow => (
                     <div
                       key={flow.id}
                       className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
@@ -630,12 +676,18 @@ export default function FlowsPage() {
                           </h4>
                           <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
                             <span>{formatDate(flow.updated_at)}</span>
-                            <span>{flow.nodes?.length || 0} node{(flow.nodes?.length || 0) !== 1 ? 's' : ''}</span>
-                            <span>{flow.edges?.length || 0} connection{(flow.edges?.length || 0) !== 1 ? 's' : ''}</span>
+                            <span>
+                              {flow.nodes?.length || 0} node
+                              {(flow.nodes?.length || 0) !== 1 ? 's' : ''}
+                            </span>
+                            <span>
+                              {flow.edges?.length || 0} connection
+                              {(flow.edges?.length || 0) !== 1 ? 's' : ''}
+                            </span>
                           </div>
                           {flow.tags && flow.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2 mb-2">
-                              {flow.tags.map((tag) => (
+                              {flow.tags.map(tag => (
                                 <span
                                   key={tag}
                                   className="px-2 py-1 bg-theme-bg-primary text-theme-text-secondary text-xs rounded"
@@ -653,20 +705,26 @@ export default function FlowsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <select
-                            onClick={(e) => e.stopPropagation()}
-                            value={flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
-                            onChange={(e) => handleAssignCategory(flow.id, e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            value={
+                              flow.category && flow.category.trim() ? flow.category : 'Unfiled'
+                            }
+                            onChange={e => handleAssignCategory(flow.id, e.target.value)}
                             title={flow.category || 'Unfiled'}
                             className="text-xs bg-[#2a3038]/30 border border-[#3a4048]/50 hover:border-[#3a4048] rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[200px] transition-all hover:bg-[#2a3038]/50 focus:bg-[#2a3038]/50 focus:border-[#3a4048] focus:outline-none"
                           >
                             <option value="Unfiled">Unfiled</option>
-                            {categories.filter((c) => c !== 'All' && c !== 'Unfiled').map((c) => (
-                              <option key={c} value={c}>{c.length > 40 ? `${c.slice(0, 37)}...` : c}</option>
-                            ))}
+                            {categories
+                              .filter(c => c !== 'All' && c !== 'Unfiled')
+                              .map(c => (
+                                <option key={c} value={c}>
+                                  {c.length > 40 ? `${c.slice(0, 37)}...` : c}
+                                </option>
+                              ))}
                             <option value="__new__">+ New category…</option>
                           </select>
                           <button
-                            onClick={(e) => handleDeleteFlow(flow.id, e)}
+                            onClick={e => handleDeleteFlow(flow.id, e)}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-theme-bg-primary rounded transition-all"
                             title="Delete flow"
                             aria-label="Delete flow"
@@ -680,7 +738,11 @@ export default function FlowsPage() {
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-12">
-                  {debouncedSearchQuery ? 'No flows found' : selectedCategory === 'All' ? 'No flows yet. Create your first flow!' : `No flows in "${selectedCategory}"`}
+                  {debouncedSearchQuery
+                    ? 'No flows found'
+                    : selectedCategory === 'All'
+                      ? 'No flows yet. Create your first flow!'
+                      : `No flows in "${selectedCategory}"`}
                 </div>
               )}
             </div>
@@ -716,17 +778,16 @@ export default function FlowsPage() {
         confirmText="Delete All"
       />
 
-      <SettingsDialog
-        isOpen={showSettingsDialog}
-        onClose={() => setShowSettingsDialog(false)}
-      />
+      <SettingsDialog isOpen={showSettingsDialog} onClose={() => setShowSettingsDialog(false)} />
 
       {showCategoryDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-theme-bg-primary rounded-xl shadow-2xl w-full max-w-md border border-theme-border overflow-hidden">
             <div className="px-6 py-5 border-b border-theme-border">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light text-theme-text-primary">{categoryToRename ? 'Rename Category' : 'New Category'}</h2>
+                <h2 className="text-2xl font-light text-theme-text-primary">
+                  {categoryToRename ? 'Rename Category' : 'New Category'}
+                </h2>
                 <button
                   onClick={() => {
                     setShowCategoryDialog(false);
@@ -743,11 +804,13 @@ export default function FlowsPage() {
 
             <div className="px-6 py-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-theme-text-primary mb-3">Category name</label>
+                <label className="block text-sm font-medium text-theme-text-primary mb-3">
+                  Category name
+                </label>
                 <input
                   type="text"
                   value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onChange={e => setNewCategoryName(e.target.value)}
                   placeholder="Enter category name..."
                   className="w-full bg-theme-bg-darkest border border-theme-border rounded-lg px-4 py-3 text-theme-text-primary placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8935f] focus:border-transparent transition-all"
                   autoFocus
@@ -801,7 +864,12 @@ export default function FlowsPage() {
                 <>
                   <div className="text-theme-text-primary">
                     <div className="mb-2">The category</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                    <div
+                      className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap"
+                      title={categoryToDelete}
+                    >
+                      {categoryToDelete}
+                    </div>
                     <div className="mt-3">contains flows. What would you like to do?</div>
                   </div>
                   <div className="flex flex-col gap-3">
@@ -823,7 +891,12 @@ export default function FlowsPage() {
                 <>
                   <div className="text-theme-text-primary">
                     <div className="mb-2">Delete empty category</div>
-                    <div className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap" title={categoryToDelete}>{categoryToDelete}</div>
+                    <div
+                      className="inline-block max-w-full px-2 py-1 rounded border border-theme-border bg-theme-bg-darkest text-[#e8935f] font-medium overflow-hidden text-ellipsis whitespace-nowrap"
+                      title={categoryToDelete}
+                    >
+                      {categoryToDelete}
+                    </div>
                   </div>
                   <div className="flex justify-end gap-3">
                     <button
