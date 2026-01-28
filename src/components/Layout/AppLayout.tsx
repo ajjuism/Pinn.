@@ -29,10 +29,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       currentPath += `/${part}`;
       // Basic mapping, could be more sophisticated with route meta
       let label = part.charAt(0).toUpperCase() + part.slice(1);
-      if (part === 'note' && parts[index+1]) return; // Skip 'note' segment if ID follows
-      if (part === 'flow' && parts[index+1]) return;
-      if (index > 0 && (parts[index-1] === 'note' || parts[index-1] === 'flow')) {
-          label = 'Details'; // Placeholder, ideally we fetch title
+      if (part === 'note' && parts[index + 1]) return; // Skip 'note' segment if ID follows
+      if (part === 'flow' && parts[index + 1]) return;
+      if (index > 0 && (parts[index - 1] === 'note' || parts[index - 1] === 'flow')) {
+        label = 'Details'; // Placeholder, ideally we fetch title
       }
 
       crumbs.push({ label, path: currentPath });
@@ -54,7 +54,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             {breadcrumbs.map((crumb, index) => (
               <div key={crumb.path} className="flex items-center">
                 {index > 0 && <ChevronRight className="h-4 w-4 mx-1" />}
-                <span className={index === breadcrumbs.length - 1 ? "text-foreground font-medium" : ""}>
+                <span
+                  className={index === breadcrumbs.length - 1 ? 'text-foreground font-medium' : ''}
+                >
                   {crumb.label}
                 </span>
               </div>
@@ -63,9 +65,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );
