@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   Search,
   Plus,
-  Menu as MenuIcon,
   Download,
   Trash2,
-  ChevronLeft,
-  Book,
   Settings,
   Folder,
   FolderOpen,
@@ -15,6 +12,11 @@ import {
   ChevronDown,
   Edit2,
   GitBranch,
+  Grid,
+  List as ListIcon,
+  MoreVertical,
+  Calendar,
+  MoreHorizontal,
 } from 'lucide-react';
 import {
   getFlows,
@@ -30,16 +32,24 @@ import {
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import { logger } from '../utils/logger';
-import { useClickOutside } from '../hooks/useClickOutside';
 import { useDebounce } from '../hooks/useDebounce';
 import { formatDate } from '../utils/date';
+import { Button } from './ui/button';
+import { Toggle } from './ui/toggle';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 export default function FlowsPage() {
   const navigate = useNavigate();
-  const router = useRouter();
   const search = useSearch({ from: '/flows' });
 
   const [flows, setFlows] = useState<Flow[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
   const [sortBy, setSortBy] = useState<'title' | 'date'>(
     (search as { sort?: 'title' | 'date' })?.sort || 'date'
@@ -53,7 +63,6 @@ export default function FlowsPage() {
   const [assignAfterCreateFlowId, setAssignAfterCreateFlowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -62,7 +71,6 @@ export default function FlowsPage() {
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [categoryDeleteCount, setCategoryDeleteCount] = useState<number>(0);
   const [showCategoryDeleteDialog, setShowCategoryDeleteDialog] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const loadFlows = useCallback(() => {
     try {
@@ -125,12 +133,6 @@ export default function FlowsPage() {
       replace: true,
     });
   }, [debouncedSearchQuery, sortBy, selectedCategory, navigate]);
-
-  useClickOutside(menuRef, () => {
-    if (menuOpen) {
-      setMenuOpen(false);
-    }
-  });
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => {
@@ -319,12 +321,10 @@ export default function FlowsPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setMenuOpen(false);
   };
 
   const handleClearAll = () => {
     setShowClearAllConfirm(true);
-    setMenuOpen(false);
   };
 
   const confirmClearAll = useCallback(() => {
@@ -342,78 +342,6 @@ export default function FlowsPage() {
 
   return (
     <div className="h-full bg-theme-bg-primary flex flex-col overflow-hidden">
-      <header className="sticky top-0 z-50 bg-theme-bg-primary flex items-center justify-between px-6 py-4 border-b border-theme-border flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.history.back()}
-            className="flex items-center gap-2 text-theme-text-secondary hover:text-white transition-colors"
-            title="Back"
-            aria-label="Go back"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-sm">Back</span>
-          </button>
-          <h1 className="text-xl font-light text-theme-text-primary">Flows</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleNewFlow}
-            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            <span>New Flow</span>
-          </button>
-          <button
-            onClick={() => navigate({ to: '/notes' })}
-            className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
-          >
-            <Book className="w-5 h-5" />
-            <span>Notes</span>
-          </button>
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-theme-text-primary hover:text-white transition-colors"
-            >
-              <MenuIcon className="w-5 h-5" />
-              <span>Menu</span>
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-theme-bg-secondary border border-gray-600 rounded-lg shadow-lg z-50">
-                <div className="py-1">
-                  <button
-                    onClick={handleExportAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Export All Flows</span>
-                  </button>
-                  <div className="border-t border-gray-600 my-1" />
-                  <button
-                    onClick={handleClearAll}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-400 hover:bg-theme-bg-primary hover:text-red-300 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Clear All Flows</span>
-                  </button>
-                  <div className="border-t border-gray-600 my-1" />
-                  <button
-                    onClick={() => {
-                      setShowSettingsDialog(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-theme-text-primary hover:bg-theme-bg-primary hover:text-white transition-colors"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Sidebar */}
         <aside className="bg-theme-bg-primary border-r border-theme-border w-[280px] min-w-[200px] flex-shrink-0 h-full flex flex-col">
@@ -617,7 +545,6 @@ export default function FlowsPage() {
                 );
               })}
 
-              {/* Empty state intentionally minimal - no extra call-to-action here */}
               {sortedCategories.length === 0 && unfiled.length === 0 && !loading && null}
             </div>
           </div>
@@ -625,26 +552,69 @@ export default function FlowsPage() {
 
         {/* Main Content */}
         <main className="flex-1 h-full flex flex-col">
-          {/* Fixed Header Section */}
-          <div className="flex-shrink-0 bg-theme-bg-primary border-b border-theme-border">
-            <div className="max-w-5xl mx-auto px-6 py-6">
+          {/* Header / Toolbar */}
+          <div className="flex-shrink-0 bg-theme-bg-primary border-b border-theme-border px-6 py-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center max-w-5xl mx-auto w-full">
+              <h3 className="text-sm uppercase tracking-wider text-gray-500">
+                {selectedCategory === 'All'
+                  ? 'All Flows'
+                  : selectedCategory === 'Unfiled'
+                    ? 'Unfiled Flows'
+                    : `Flows in "${selectedCategory}"`}
+              </h3>
+
               {!loading && (
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm uppercase tracking-wider text-gray-500">
-                    {selectedCategory === 'All'
-                      ? 'All Flows'
-                      : selectedCategory === 'Unfiled'
-                        ? 'Unfiled Flows'
-                        : `Flows in "${selectedCategory}"`}
-                  </h3>
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                   {filteredFlows.length > 0 && (
                     <button
                       onClick={() => setSortBy(sortBy === 'title' ? 'date' : 'title')}
-                      className="text-sm text-gray-500 hover:text-theme-text-secondary transition-colors"
+                      className="text-sm text-gray-500 hover:text-theme-text-secondary transition-colors mr-2"
                     >
                       Sort By: {sortBy === 'title' ? 'Title' : 'Date'}
                     </button>
                   )}
+
+                  <div className="flex items-center border rounded-md bg-background border-theme-border">
+                    <Toggle
+                      pressed={viewMode === 'grid'}
+                      onPressedChange={() => setViewMode('grid')}
+                      className="rounded-r-none border-r border-theme-border text-gray-400 data-[state=on]:bg-theme-bg-secondary data-[state=on]:text-theme-text-primary"
+                      aria-label="Grid view"
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Toggle>
+                    <Toggle
+                      pressed={viewMode === 'list'}
+                      onPressedChange={() => setViewMode('list')}
+                      className="rounded-l-none text-gray-400 data-[state=on]:bg-theme-bg-secondary data-[state=on]:text-theme-text-primary"
+                      aria-label="List view"
+                    >
+                      <ListIcon className="h-4 w-4" />
+                    </Toggle>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="border-theme-border bg-transparent hover:bg-theme-bg-secondary">
+                        <MoreHorizontal className="h-4 w-4 text-theme-text-secondary" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-theme-bg-secondary border-theme-border">
+                      <DropdownMenuItem onClick={handleExportAll} className="focus:bg-theme-bg-tertiary focus:text-theme-text-primary">
+                        <Download className="mr-2 h-4 w-4" /> Export All Flows
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleClearAll} className="focus:bg-theme-bg-tertiary focus:text-red-400 text-red-400">
+                        <Trash2 className="mr-2 h-4 w-4" /> Clear All Flows
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowSettingsDialog(true)} className="focus:bg-theme-bg-tertiary focus:text-theme-text-primary">
+                        <Settings className="mr-2 h-4 w-4" /> Settings
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button onClick={handleNewFlow}>
+                    <Plus className="mr-2 h-4 w-4" /> New Flow
+                  </Button>
                 </div>
               )}
             </div>
@@ -662,46 +632,112 @@ export default function FlowsPage() {
               {loading ? (
                 <div className="text-center text-gray-500 py-12">Loading flows...</div>
               ) : filteredFlows.length > 0 ? (
-                <div className="space-y-6">
-                  {filteredFlows.map(flow => (
-                    <div
-                      key={flow.id}
-                      className="group relative bg-theme-bg-secondary rounded-lg p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
-                      onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-lg text-theme-text-primary group-hover:text-white transition-colors mb-2">
-                            {flow.title}
-                          </h4>
-                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
-                            <span>{formatDate(flow.updated_at)}</span>
-                            <span>
-                              {flow.nodes?.length || 0} node
-                              {(flow.nodes?.length || 0) !== 1 ? 's' : ''}
-                            </span>
-                            <span>
-                              {flow.edges?.length || 0} connection
-                              {(flow.edges?.length || 0) !== 1 ? 's' : ''}
-                            </span>
+                viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+                    {filteredFlows.map(flow => (
+                      <Card
+                        key={flow.id}
+                        className="group cursor-pointer hover:shadow-md transition-all border-theme-border bg-theme-bg-secondary hover:border-theme-accent/50"
+                        onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
+                      >
+                        <CardHeader className="p-4 pb-2">
+                          <div className="flex justify-between items-start gap-2">
+                            <CardTitle className="text-base font-semibold leading-tight line-clamp-2 text-theme-text-primary">
+                              {flow.title}
+                            </CardTitle>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-theme-bg-tertiary"
+                                >
+                                  <MoreVertical className="h-3 w-3 text-theme-text-secondary" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-theme-bg-secondary border-theme-border">
+                                <DropdownMenuItem
+                                  className="text-red-400 focus:text-red-400 focus:bg-theme-bg-tertiary"
+                                  onClick={e => handleDeleteFlow(flow.id, e)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          {flow.tags && flow.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2 mb-2">
-                              {flow.tags.map(tag => (
+                        </CardHeader>
+                        <CardContent className="p-4 pt-2">
+                           <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                              <span>
+                                {flow.nodes?.length || 0} node
+                                {(flow.nodes?.length || 0) !== 1 ? 's' : ''}
+                              </span>
+                              <span>
+                                {flow.edges?.length || 0} link
+                                {(flow.edges?.length || 0) !== 1 ? 's' : ''}
+                              </span>
+                           </div>
+                           {flow.tags && flow.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {flow.tags.slice(0, 3).map(tag => (
                                 <span
                                   key={tag}
-                                  className="px-2 py-1 bg-theme-bg-primary text-theme-text-secondary text-xs rounded"
+                                  className="px-2 py-0.5 bg-theme-bg-primary text-theme-text-secondary text-[10px] rounded border border-theme-border"
                                 >
                                   {tag}
                                 </span>
                               ))}
+                              {flow.tags.length > 3 && (
+                                <span className="text-[10px] text-gray-500">+{flow.tags.length - 3}</span>
+                              )}
                             </div>
-                          )}
-                          {selectedCategory === 'All' && (
-                            <span className="px-2 py-0.5 rounded bg-theme-bg-primary border border-theme-border text-theme-text-secondary text-xs">
-                              {flow.category && flow.category.trim() ? flow.category : 'Unfiled'}
+                           )}
+                        </CardContent>
+                        <CardFooter className="p-4 pt-0 text-xs text-muted-foreground flex justify-between items-center">
+                          <span className="flex items-center">
+                            <Calendar className="mr-1 h-3 w-3" />
+                            {formatDate(flow.updated_at)}
+                          </span>
+                          {flow.category && (
+                            <span className="bg-theme-bg-primary px-2 py-0.5 rounded text-[10px] font-medium border border-theme-border">
+                              {flow.category}
                             </span>
                           )}
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 pb-20">
+                    {filteredFlows.map(flow => (
+                      <div
+                        key={flow.id}
+                        className="group flex items-center justify-between p-3 rounded-lg border border-theme-border bg-theme-bg-secondary hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
+                        onClick={() => navigate({ to: '/flow/$flowId', params: { flowId: flow.id } })}
+                      >
+                        <div className="flex-1 min-w-0 grid gap-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold truncate text-theme-text-primary">{flow.title}</h3>
+                            {flow.category && (
+                                <span className="bg-theme-bg-primary px-2 py-0.5 rounded text-[10px] text-muted-foreground border border-theme-border">
+                                  {flow.category}
+                                </span>
+                              )}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>{formatDate(flow.updated_at)}</span>
+                            <span>{flow.nodes?.length || 0} nodes</span>
+                            <span>{flow.edges?.length || 0} links</span>
+                            {flow.tags && flow.tags.length > 0 && (
+                                <div className="flex gap-1 ml-2">
+                                {flow.tags.slice(0, 3).map(tag => (
+                                    <span key={tag} className="px-1.5 py-0.5 bg-theme-bg-primary rounded text-[10px] border border-theme-border">
+                                    {tag}
+                                    </span>
+                                ))}
+                                </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <select
@@ -711,31 +747,31 @@ export default function FlowsPage() {
                             }
                             onChange={e => handleAssignCategory(flow.id, e.target.value)}
                             title={flow.category || 'Unfiled'}
-                            className="text-xs bg-[#2a3038]/30 border border-[#3a4048]/50 hover:border-[#3a4048] rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[200px] transition-all hover:bg-[#2a3038]/50 focus:bg-[#2a3038]/50 focus:border-[#3a4048] focus:outline-none"
+                            className="text-xs bg-theme-bg-primary/50 border border-theme-border rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[150px] focus:outline-none focus:border-theme-accent transition-colors"
                           >
                             <option value="Unfiled">Unfiled</option>
                             {categories
                               .filter(c => c !== 'All' && c !== 'Unfiled')
                               .map(c => (
                                 <option key={c} value={c}>
-                                  {c.length > 40 ? `${c.slice(0, 37)}...` : c}
+                                  {c.length > 20 ? `${c.slice(0, 17)}...` : c}
                                 </option>
                               ))}
                             <option value="__new__">+ New category…</option>
                           </select>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-theme-bg-primary hover:text-red-400"
                             onClick={e => handleDeleteFlow(flow.id, e)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-500 hover:text-red-400 hover:bg-theme-bg-primary rounded transition-all"
-                            title="Delete flow"
-                            aria-label="Delete flow"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="text-center text-gray-500 py-12">
                   {debouncedSearchQuery
@@ -752,7 +788,7 @@ export default function FlowsPage() {
 
       <button
         onClick={handleNewFlow}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors"
+        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors z-20"
       >
         <Plus className="w-6 h-6 text-white" />
       </button>
