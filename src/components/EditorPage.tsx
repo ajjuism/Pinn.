@@ -370,7 +370,7 @@ export default function EditorPage() {
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="Untitled"
-            className="w-full text-4xl font-bold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/50 py-4"
+            className="w-full text-4xl font-bold bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/50 py-4 focus-visible:!outline-none focus-visible:!ring-0 focus:!outline-none focus:!ring-0"
           />
 
           {/* Editor Area */}

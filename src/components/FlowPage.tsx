@@ -983,7 +983,7 @@ export default function FlowPage() {
                   handleSaveTitle();
                 }
               }}
-              className="bg-theme-bg-secondary border border-[#2a3038] rounded-lg px-4 py-2 text-theme-text-primary focus:outline-none focus:border-theme-accent/50 w-full"
+              className="bg-theme-bg-secondary border border-[#2a3038] rounded-lg px-4 py-2 text-theme-text-primary focus:outline-none focus:border-theme-accent/50 w-full focus-visible:!outline-none focus-visible:!ring-0 focus:!outline-none focus:!ring-0"
               autoFocus
             />
           ) : (
