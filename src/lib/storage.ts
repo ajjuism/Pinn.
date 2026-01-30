@@ -6,6 +6,8 @@ import {
   rebuildNotesIndex,
   isFolderConfigured,
   hasDirectoryAccess,
+  createFolderInFileSystem,
+  getFoldersFromIndex,
 } from './fileSystemStorage';
 import { logger } from '../utils/logger';
 
@@ -21,6 +23,7 @@ export interface Note {
 
 // In-memory cache
 let notesCache: Note[] | null = null;
+let foldersCache: string[] | null = null;
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 let indexValidated = false; // Track if index has been validated on this load
@@ -61,8 +64,9 @@ async function initialize(): Promise<void> {
 
       if (folderConfigured && hasAccess) {
         // Load from index first (fast path - metadata only)
-        logger.log('Loading notes from index (fast path)...');
+        logger.log('Loading notes and folders from index (fast path)...');
         const loadedNotes = await readAllNotesFromDirectory(false); // false = don't load content
+        const loadedFolders = await getFoldersFromIndex();
 
         // Only update cache if we got valid data (array, even if empty)
         // Don't overwrite with null or undefined
@@ -71,6 +75,12 @@ async function initialize(): Promise<void> {
         } else {
           logger.warn('Invalid notes data loaded, keeping existing cache or empty array');
           notesCache = notesCache || [];
+        }
+
+        if (Array.isArray(loadedFolders)) {
+          foldersCache = loadedFolders;
+        } else {
+          foldersCache = foldersCache || [];
         }
 
         // Validate index once on app load
@@ -113,6 +123,7 @@ async function initialize(): Promise<void> {
         } catch {
           notesCache = [];
         }
+        foldersCache = []; // No separate folder storage in localStorage yet (derived from notes)
 
         logger.log(`Initialized storage from localStorage: ${notesCache.length} notes`);
       }
@@ -220,13 +231,11 @@ function readAll(): Note[] {
 }
 
 /**
- * Read folders from the file system structure
- * Folders are now determined by the actual directory structure
+ * Read folders from cache (merging index folders and derived folders)
  */
 function readFolders(): string[] {
-  // Folders are now determined by the file system structure
-  // We get them from the notes index
-  const folders = new Set<string>();
+  // Merge folders from index (if any) with folders derived from notes
+  const folders = new Set<string>(foldersCache || []);
   const notes = readAll();
   for (const note of notes) {
     if (note.folder && note.folder.trim()) {
@@ -432,12 +441,27 @@ export function getAllFolders(): string[] {
   return readFolders();
 }
 
-export function addFolder(name: string): void {
-  // Folders are now created automatically when notes are added to them
-  // This function is kept for API compatibility but doesn't need to do anything
-  // The folder will be created when a note is assigned to it
-  logger.log(`addFolder called for: ${name} (folders are now managed by file system structure)`);
+export function createFolder(name: string): void {
+  const folderName = (name || '').trim();
+  if (!folderName) return;
+
+  // Add to local cache immediately for UI responsiveness
+  if (!foldersCache) foldersCache = [];
+  if (!foldersCache.includes(folderName)) {
+    foldersCache.push(folderName);
+    foldersCache.sort((a, b) => a.localeCompare(b));
+  }
+
+  // Persist to file system
+  if (isFolderConfigured() && hasDirectoryAccess()) {
+    createFolderInFileSystem(folderName).catch(logger.error);
+  } else {
+    logger.warn('Cannot create empty folder in localStorage mode');
+  }
 }
+
+// Deprecated alias for compatibility
+export const addFolder = createFolder;
 
 export function renameFolder(oldName: string, newName: string): { updatedCount: number } {
   const source = (oldName || '').trim();

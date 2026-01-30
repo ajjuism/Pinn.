@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   Search,
@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Edit2,
   GitBranch,
-  Grid,
+  LayoutGrid,
   List as ListIcon,
   MoreVertical,
   Calendar,
@@ -49,7 +49,7 @@ export default function FlowsPage() {
   const search = useSearch({ from: '/flows' });
 
   const [flows, setFlows] = useState<Flow[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState((search as { search?: string })?.search || '');
   const [sortBy, setSortBy] = useState<'title' | 'date'>(
     (search as { sort?: 'title' | 'date' })?.sort || 'date'
@@ -554,7 +554,7 @@ export default function FlowsPage() {
         <main className="flex-1 h-full flex flex-col">
           {/* Header / Toolbar */}
           <div className="flex-shrink-0 bg-theme-bg-primary border-b border-theme-border px-6 py-6">
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center max-w-5xl mx-auto w-full">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center max-w-7xl mx-auto w-full">
               <h3 className="text-sm uppercase tracking-wider text-gray-500">
                 {selectedCategory === 'All'
                   ? 'All Flows'
@@ -581,7 +581,7 @@ export default function FlowsPage() {
                       className="rounded-r-none border-r border-theme-border text-gray-400 data-[state=on]:bg-theme-bg-secondary data-[state=on]:text-theme-text-primary"
                       aria-label="Grid view"
                     >
-                      <Grid className="h-4 w-4" />
+                      <LayoutGrid className="h-4 w-4" />
                     </Toggle>
                     <Toggle
                       pressed={viewMode === 'list'}
@@ -628,7 +628,7 @@ export default function FlowsPage() {
               msOverflowStyle: 'none' /* IE and Edge */,
             }}
           >
-            <div className="max-w-5xl mx-auto px-6 py-12">
+            <div className="max-w-7xl mx-auto px-6 py-12">
               {loading ? (
                 <div className="text-center text-gray-500 py-12">Loading flows...</div>
               ) : filteredFlows.length > 0 ? (
@@ -740,25 +740,50 @@ export default function FlowsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <select
-                            onClick={e => e.stopPropagation()}
-                            value={
-                              flow.category && flow.category.trim() ? flow.category : 'Unfiled'
-                            }
-                            onChange={e => handleAssignCategory(flow.id, e.target.value)}
-                            title={flow.category || 'Unfiled'}
-                            className="text-xs bg-theme-bg-primary/50 border border-theme-border rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[150px] focus:outline-none focus:border-theme-accent transition-colors"
-                          >
-                            <option value="Unfiled">Unfiled</option>
-                            {categories
-                              .filter(c => c !== 'All' && c !== 'Unfiled')
-                              .map(c => (
-                                <option key={c} value={c}>
-                                  {c.length > 20 ? `${c.slice(0, 17)}...` : c}
-                                </option>
-                              ))}
-                            <option value="__new__">+ New category…</option>
-                          </select>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                              <button
+                                className="text-xs bg-theme-bg-primary/50 border border-theme-border rounded px-2 py-1 text-theme-text-secondary hover:text-theme-text-primary max-w-[150px] focus:outline-none focus:border-theme-accent transition-colors truncate text-left"
+                                title={flow.category || 'Unfiled'}
+                              >
+                                {flow.category || 'Unfiled'}
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-theme-bg-secondary border-theme-border max-h-[300px] overflow-y-auto">
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssignCategory(flow.id, 'Unfiled');
+                                }}
+                                className="focus:bg-theme-bg-tertiary focus:text-theme-text-primary text-xs"
+                              >
+                                Unfiled
+                              </DropdownMenuItem>
+                              {categories
+                                .filter(c => c !== 'All' && c !== 'Unfiled')
+                                .map(c => (
+                                  <DropdownMenuItem
+                                    key={c}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAssignCategory(flow.id, c);
+                                    }}
+                                    className="focus:bg-theme-bg-tertiary focus:text-theme-text-primary text-xs"
+                                  >
+                                    {c}
+                                  </DropdownMenuItem>
+                                ))}
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssignCategory(flow.id, '__new__');
+                                }}
+                                className="focus:bg-theme-bg-tertiary focus:text-theme-text-primary text-xs text-theme-accent"
+                              >
+                                + New category…
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Button
                             variant="ghost"
                             size="icon"
