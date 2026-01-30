@@ -238,7 +238,7 @@ function RootComponent() {
   const folderPath = getFolderPath();
 
   return (
-    <div className="min-h-screen bg-theme-bg-primary text-theme-text-secondary">
+    <div className="h-screen overflow-hidden bg-theme-bg-primary text-theme-text-secondary">
       {showOnboarding ? (
         <OnboardingDialog onComplete={handleOnboardingComplete} />
       ) : (

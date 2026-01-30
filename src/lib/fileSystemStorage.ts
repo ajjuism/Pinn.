@@ -721,6 +721,7 @@ export async function readNotesIndex(): Promise<{
     created_at: string;
     updated_at: string;
   }>;
+  folders?: string[];
 } | null> {
   try {
     const notesDir = await ensureNotesDirectory();
@@ -751,16 +752,26 @@ export async function writeNotesIndex(
     filePath: string;
     created_at: string;
     updated_at: string;
-  }>
+  }>,
+  folders?: string[]
 ): Promise<void> {
   try {
     const notesDir = await ensureNotesDirectory();
     const fileHandle = await notesDir.getFileHandle('notes-index.json', { create: true });
     const writable = await fileHandle.createWritable();
+
+    // Get existing index to preserve folders if not provided
+    let existingFolders: string[] = [];
+    if (!folders) {
+      const existing = await readNotesIndex();
+      existingFolders = existing?.folders || [];
+    }
+
     const indexData = {
       version: '1.0',
       lastUpdated: new Date().toISOString(),
       notes,
+      folders: folders || existingFolders,
     };
     await writable.write(JSON.stringify(indexData, null, 2));
     await writable.close();
@@ -901,8 +912,6 @@ export async function writeNoteToFile(note: {
       const oldPathParts = existingNote.filePath.split('/');
       const oldFilename = oldPathParts[oldPathParts.length - 1];
       const oldSlug = oldFilename.replace(/\.md$/, '');
-
-      const newBaseSlug = createSlugFromTitle(note.title);
 
       // If the slug generated from the current title matches the old slug (ignoring uniqueness suffixes potentially),
       // or if we just want to be safe: check if the old filename still exists.
@@ -1123,6 +1132,7 @@ export async function rebuildNotesIndex(): Promise<void> {
       created_at: string;
       updated_at: string;
     }> = [];
+    const folders = new Set<string>();
 
     // Recursively scan directories
     async function scanDirectory(
@@ -1154,9 +1164,10 @@ export async function rebuildNotesIndex(): Promise<void> {
           } catch (error) {
             logger.warn(`Error reading file ${entry.name}:`, error);
           }
-        } else if (entry.kind === 'directory' && entry.name !== 'trash') {
-          // Skip trash directory
+        } else if (entry.kind === 'directory' && entry.name !== 'trash' && entry.name !== 'unfiled') {
+          // Skip trash and unfiled directory (unfiled is internal organization, not a user folder)
           const newFolderPath = folderPath ? `${folderPath}/${entry.name}` : entry.name;
+          folders.add(newFolderPath);
           const subDirHandle = await dirHandle.getDirectoryHandle(entry.name, { create: false });
           await scanDirectory(subDirHandle, newFolderPath);
         }
@@ -1164,8 +1175,8 @@ export async function rebuildNotesIndex(): Promise<void> {
     }
 
     await scanDirectory(notesDir);
-    await writeNotesIndex(notes);
-    logger.log(`Rebuilt notes index with ${notes.length} notes`);
+    await writeNotesIndex(notes, Array.from(folders).sort());
+    logger.log(`Rebuilt notes index with ${notes.length} notes and ${folders.size} folders`);
   } catch (error) {
     logger.error('Error rebuilding notes index:', error);
     throw error;
@@ -1453,4 +1464,38 @@ export async function readCategoriesFromFile(): Promise<string[]> {
 export async function writeCategoriesToFile(categories: string[]): Promise<void> {
   const unique = Array.from(new Set(categories.map(c => (c || '').trim()).filter(Boolean)));
   await writeJSONFile('flowCategories.json', unique);
+}
+
+/**
+ * Get folders from index
+ */
+export async function getFoldersFromIndex(): Promise<string[]> {
+  const index = await readNotesIndex();
+  return index?.folders || [];
+}
+
+/**
+ * Create a folder in the file system and update index
+ */
+export async function createFolderInFileSystem(name: string): Promise<void> {
+  const folderName = (name || '').trim();
+  if (!folderName) return;
+
+  try {
+    // 1. Create directory
+    await ensureNotesFolder(folderName);
+
+    // 2. Update index
+    const index = await readNotesIndex();
+    const notes = index?.notes || [];
+    const currentFolders = new Set(index?.folders || []);
+
+    if (!currentFolders.has(folderName)) {
+      currentFolders.add(folderName);
+      await writeNotesIndex(notes, Array.from(currentFolders).sort());
+    }
+  } catch (error) {
+    logger.error('Error creating folder in file system:', error);
+    throw error;
+  }
 }
