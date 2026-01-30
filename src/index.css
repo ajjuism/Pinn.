@@ -455,9 +455,7 @@ h6.ce-header {
   color: var(--color-text-tertiary);
   background-color: transparent;
   opacity: 0.6;
-  transition:
-    opacity 0.2s ease,
-    color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
 }
 .ce-toolbar__plus:hover,
 .ce-toolbar__settings-btn:hover {
@@ -465,76 +463,129 @@ h6.ce-header {
   color: var(--color-text-primary);
 }
 
-.ce-popover {
+/* Selection color */
+::selection {
+  background-color: rgba(99, 102, 241, 0.3); /* Accent color with opacity */
+}
+
+/* ==========================================================================
+   Editor.js UI Components Overrides (Verified)
+   ========================================================================== */
+
+/* Popover Container */
+.ce-popover,
+.ce-popover__container,
+.ce-popover--nested {
   background-color: var(--color-bg-secondary) !important;
   border: 1px solid var(--color-border) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
   border-radius: 8px !important;
   color: var(--color-text-primary) !important;
+  --color-background-icon: var(--color-bg-tertiary);
+  --color-background-item-focus: var(--color-bg-tertiary);
+  --color-text-primary: var(--color-text-primary);
 }
-.ce-popover__item:hover {
-  background-color: var(--color-bg-tertiary) !important;
-}
-.ce-popover__item-icon {
-  background-color: var(--color-bg-tertiary) !important;
+
+/* Popover Items (Verified Class: .ce-popover-item) */
+.ce-popover-item {
   color: var(--color-text-primary) !important;
+  transition: background-color 0.1s ease;
+}
+
+.ce-popover-item:hover,
+.ce-popover-item--focused {
+  background-color: var(--color-bg-tertiary) !important;
   box-shadow: none !important;
 }
 
+/* Active/Selected Item (Blue Highlight) */
+.ce-popover-item--active {
+  background-color: rgba(99, 102, 241, 0.15) !important; /* Indigo tint */
+  color: #818cf8 !important; /* Indigo 400 */
+}
+
+/* Popover Item Icon */
+.ce-popover-item__icon {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: none !important;
+}
+
+/* Active Item Icon Override */
+.ce-popover-item--active .ce-popover-item__icon {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  color: #818cf8 !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+/* Popover Search */
+.ce-popover__search,
+.cdx-search-field {
+  background-color: var(--color-bg-tertiary) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.cdx-search-field__input {
+  color: var(--color-text-primary) !important;
+  background-color: transparent !important;
+}
+
+.cdx-search-field__icon {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Nothing found message */
+.ce-popover__nothing-found-message {
+  color: var(--color-text-secondary) !important;
+  font-size: 14px !important;
+  padding: 10px !important;
+}
+
+/* Block Settings Handle (Verified Class: .cdx-settings-button) */
+.cdx-settings-button {
+  color: var(--color-text-secondary) !important;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.cdx-settings-button:hover,
+.cdx-settings-button--focused {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cdx-settings-button--active {
+  color: #818cf8 !important; /* Indigo 400 */
+}
+
+/* Inline Toolbar */
 .ce-inline-toolbar {
   background-color: var(--color-bg-secondary) !important;
   border: 1px solid var(--color-border) !important;
   color: var(--color-text-primary) !important;
   z-index: 1000 !important;
 }
-.ce-inline-toolbar__dropdown:hover {
-  background-color: var(--color-bg-tertiary) !important;
+
+.ce-inline-toolbar__buttons {
+  color: var(--color-text-primary) !important;
 }
+
+/* Inline Toolbar Tools (Bold, Italic, Link) */
+.ce-inline-tool {
+  color: var(--color-text-primary) !important;
+}
+
 .ce-inline-tool:hover {
   background-color: var(--color-bg-tertiary) !important;
-}
-.ce-conversion-toolbar {
-  background-color: var(--color-bg-secondary) !important;
-  border: 1px solid var(--color-border) !important;
   color: var(--color-text-primary) !important;
-  z-index: 1000 !important;
-}
-.ce-conversion-tool:hover {
-  background-color: var(--color-bg-tertiary) !important;
-}
-.ce-conversion-tool__icon {
-  background-color: var(--color-bg-tertiary) !important;
 }
 
-/* Placeholder color */
-.ce-header[data-placeholder]:before,
-.ce-paragraph[data-placeholder]:before {
-  color: var(--color-text-secondary);
-  opacity: 0.5;
+.ce-inline-tool--active {
+  color: #818cf8 !important; /* Indigo 400 */
+  background-color: rgba(99, 102, 241, 0.1) !important;
 }
 
-/* Selection color */
-::selection {
-  background-color: rgba(99, 102, 241, 0.3); /* Accent color with opacity */
-}
-
-/* Editor.js Popover Search & Inputs */
-.ce-popover__search,
-.ce-popover input,
-.cdx-search-field {
-  background-color: var(--color-bg-tertiary) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: 6px !important;
-  color: var(--color-text-primary) !important;
-  box-shadow: none !important;
-}
-
-.ce-popover__nothing-found-message {
-  color: var(--color-text-secondary) !important;
-  font-size: 14px !important;
-}
-
-/* Inline Tool Input (Link) */
+/* Inline Toolbar Input (Link) */
 .ce-inline-tool-input {
   background-color: var(--color-bg-tertiary) !important;
   color: var(--color-text-primary) !important;
@@ -543,15 +594,39 @@ h6.ce-header {
   box-shadow: none !important;
 }
 
-/* Marker (Highlight) */
+/* Inline Toolbar Dropdown (e.g., Headers) */
+.ce-inline-toolbar__dropdown-content {
+  background-color: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Conversion Toolbar */
+.ce-conversion-toolbar {
+  background-color: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+  z-index: 1000 !important;
+}
+
+/* Conversion Toolbar Icon */
+.ce-conversion-tool__icon {
+  background-color: var(--color-bg-tertiary) !important;
+}
+
+.ce-conversion-tool:hover .ce-conversion-tool__icon {
+  background-color: var(--color-bg-tertiary) !important; /* Maintain background on hover */
+}
+
+/* Marker Tool */
 .cdx-marker {
-  background: rgba(99, 102, 241, 0.2) !important; /* Accent color transparent */
+  background: rgba(99, 102, 241, 0.3) !important;
   color: inherit !important;
   padding: 0 2px;
   border-radius: 2px;
 }
 
-/* Popover Scrollbar */
+/* Scrollbars inside editor UI */
 .ce-popover__items::-webkit-scrollbar {
   width: 4px;
 }
